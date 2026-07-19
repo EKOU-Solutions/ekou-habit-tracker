@@ -1,12 +1,22 @@
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { GradientText } from '@/components/GradientText';
+import { AvatarBadge } from '@/components/AvatarBadge';
+import { MicIcon } from '@/components/icons';
+import { formatDayMonth } from '@/lib/dates';
 import { DiaCeroKit } from '@/screens/home/DiaCeroKit';
 import { HabitRow, PriorityHabitCard } from '@/screens/home/HabitCard';
 import { RachaRing } from '@/screens/home/RachaRing';
@@ -15,9 +25,8 @@ import { useHabitStore, type Habit } from '@/store/useHabitStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gradientPrincipal, palette } from '@/theme/palette';
 import {
-  cardShadow,
   floatingButtonShadow,
-  softBadgeShadow,
+  listShadow,
   streakChipShadow,
   voiceButtonShadow,
 } from '@/theme/shadows';
@@ -77,13 +86,9 @@ export function HomeScreen() {
             <Text className="text-[22px] font-bold tracking-[-0.3px] text-marino">
               Hola, {nickname || 'ahí'}
             </Text>
-            <Text className="mt-0.5 text-[13px] text-gris-500">{formatToday()}</Text>
+            <Text className="mt-0.5 text-[13px] text-gris-500">{formatDayMonth(new Date())}</Text>
           </View>
-          {isAgenda ? (
-            <StreakChip streakDays={streakDays} />
-          ) : (
-            <AvatarBadge initial={(nickname || '?').charAt(0).toUpperCase()} />
-          )}
+          {isAgenda ? <StreakChip streakDays={streakDays} /> : <AvatarBadge nickname={nickname} />}
         </View>
 
         {isAgenda ? <WeeklyStrip /> : null}
@@ -94,7 +99,7 @@ export function HomeScreen() {
 
         {priorityHabit ? (
           <>
-            <SectionLabel>AHORA · ESTA MAÑANA</SectionLabel>
+            <SectionLabel topMargin="mt-3.5">AHORA · ESTA MAÑANA</SectionLabel>
             <PriorityHabitCard
               habit={priorityHabit}
               isRiesgo={isRiesgo}
@@ -105,8 +110,8 @@ export function HomeScreen() {
 
         {restHabits.length > 0 ? (
           <>
-            <SectionLabel>HOY</SectionLabel>
-            <View className="rounded-[24px] bg-white" style={cardShadow}>
+            <SectionLabel topMargin="mt-4">HOY</SectionLabel>
+            <View className="rounded-[24px] bg-white" style={listShadow}>
               {restHabits.map((habit, index) => (
                 <HabitRow
                   key={habit.id}
@@ -125,22 +130,11 @@ export function HomeScreen() {
   );
 }
 
-function SectionLabel({ children }: { children: string }) {
+function SectionLabel({ children, topMargin }: { children: string; topMargin: string }) {
   return (
-    <Text className="mb-2 ml-1 mt-4 text-[11px] font-bold tracking-[0.09em] text-gris-500">
+    <Text className={`mb-2 ml-1 ${topMargin} text-[11px] font-bold tracking-[0.09em] text-gris-500`}>
       {children}
     </Text>
-  );
-}
-
-function AvatarBadge({ initial }: { initial: string }) {
-  return (
-    <View
-      className="h-10 w-10 items-center justify-center rounded-full bg-white"
-      style={softBadgeShadow}
-    >
-      <GradientText className="text-base font-bold">{initial}</GradientText>
-    </View>
   );
 }
 
@@ -150,7 +144,7 @@ function StreakChip({ streakDays }: { streakDays: number }) {
       colors={gradientPrincipal}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      className="flex-row items-center gap-[7px] rounded-[22px] px-[15px] py-2.5"
+      className="flex-row items-center gap-[7px] rounded-[22px] px-[15px] py-[9px]"
       style={streakChipShadow}
     >
       <View className="h-2 w-2 rounded-full bg-aguamarina" />
@@ -207,27 +201,33 @@ function RoundButton({
 }
 
 function VoiceButton({ onPress }: { onPress: () => void }) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 1300, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1300, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+    );
+  }, [scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Dictar hábito a EKOU">
-      <LinearGradient
-        colors={gradientPrincipal}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="h-[68px] w-[68px] items-center justify-center rounded-full"
-        style={voiceButtonShadow}
-      >
-        <Svg width={26} height={26} viewBox="0 0 24 24">
-          <Rect x={9} y={3} width={6} height={11} rx={3} fill={palette.blanco} />
-          <Path d="M5 11a7 7 0 0 0 14 0" stroke={palette.blanco} strokeWidth={2} fill="none" strokeLinecap="round" />
-          <Path d="M12 18v3" stroke={palette.blanco} strokeWidth={2} strokeLinecap="round" />
-        </Svg>
-      </LinearGradient>
+      <Animated.View style={animatedStyle}>
+        <LinearGradient
+          colors={gradientPrincipal}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="h-[68px] w-[68px] items-center justify-center rounded-full"
+          style={voiceButtonShadow}
+        >
+          <MicIcon color={palette.blanco} size={26} />
+        </LinearGradient>
+      </Animated.View>
     </Pressable>
   );
-}
-
-function formatToday(): string {
-  return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' })
-    .format(new Date())
-    .replace(',', '');
 }

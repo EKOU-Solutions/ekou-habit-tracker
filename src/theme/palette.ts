@@ -27,8 +27,8 @@ export const gradientHistorial = {
   locations: [0, 0.6, 1] as const,
 } as const;
 
-/** Anillo de progreso: aguamarina → morado (aprox. RN del conic-gradient del diseño). */
-export const gradientAnillo = [palette.aguamarina, palette.morado] as const;
+/** Aguamarina → morado: anillos de progreso (SVG) y badges de IA (✨). */
+export const gradientIA = [palette.aguamarina, palette.morado] as const;
 
 /** Principal: linear-gradient(135deg, #001A70, #AF0F7D) — racha, voz y CTA. */
 export const gradientPrincipal = [palette.marino, palette.morado] as const;

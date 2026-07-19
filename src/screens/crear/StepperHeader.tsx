@@ -15,7 +15,7 @@ function ProgressBar({ filled }: { filled: boolean }) {
   useEffect(() => {
     progress.value = withTiming(filled ? 1 : 0, {
       duration: 500,
-      easing: Easing.inOut(Easing.ease),
+      easing: Easing.ease,
     });
   }, [filled, progress]);
 
@@ -48,6 +48,7 @@ export function StepperHeader({ step, onBack }: { step: number; onBack: () => vo
         onPress={onBack}
         accessibilityRole="button"
         accessibilityLabel="Volver"
+        hitSlop={8}
         className="h-9 w-9 items-center justify-center rounded-full bg-white"
         style={softBadgeShadow}
       >

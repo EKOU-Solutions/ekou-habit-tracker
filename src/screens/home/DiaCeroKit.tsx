@@ -5,7 +5,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
-import { GradientText } from '@/components/GradientText';
+import { AvatarBadge } from '@/components/AvatarBadge';
+import { MicIcon } from '@/components/icons';
 import { useHabitStore, type Habit } from '@/store/useHabitStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
@@ -36,6 +37,7 @@ const STARTER_HABITS: StarterHabit[] = [
     icon: '📖',
     scheduleLabel: '20 min · noche',
     accent: withAlpha(palette.marino, 0.08),
+    timerLabel: '20:00',
   },
 ];
 
@@ -75,14 +77,7 @@ export function DiaCeroKit() {
               Elige uno para encender tu racha. Con uno al día basta.
             </Text>
           </View>
-          <View
-            className="h-10 w-10 items-center justify-center rounded-full bg-white"
-            style={softBadgeShadow}
-          >
-            <GradientText className="text-base font-bold">
-              {(nickname || '?').charAt(0).toUpperCase()}
-            </GradientText>
-          </View>
+          <AvatarBadge nickname={nickname} />
         </View>
 
         <View className="mb-3 mt-[18px] flex-row items-center gap-2 px-1">
@@ -101,21 +96,23 @@ export function DiaCeroKit() {
               onPress={() => toggleSelected(habit.id)}
             />
           ))}
-          <Pressable
-            onPress={() => router.push('/crear/texto')}
-            accessibilityRole="button"
-            className="w-[48.5%] items-center justify-center gap-1.5 rounded-[22px] border-[1.5px] border-dashed border-marino/[0.18] p-4"
-            style={{ backgroundColor: withAlpha(palette.marino, 0.05) }}
-          >
-            <View
-              className="h-11 w-11 items-center justify-center rounded-full bg-white"
-              style={softBadgeShadow}
+          <Pressable onPress={() => router.push('/crear/texto')} accessibilityRole="button" className="w-[48.5%]">
+            <LinearGradient
+              colors={[withAlpha(palette.marino, 0.05), withAlpha(palette.morado, 0.07)]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.87, y: 0.5 }}
+              className="h-full items-center justify-center gap-1.5 rounded-[22px] border-[1.5px] border-dashed border-marino/[0.18] p-4"
             >
-              <Svg width={18} height={18} viewBox="0 0 20 20">
-                <Path d="M10 3v14M3 10h14" stroke={palette.marino} strokeWidth={2.2} strokeLinecap="round" />
-              </Svg>
-            </View>
-            <Text className="text-center text-[13.5px] font-bold text-marino">Crear el mío</Text>
+              <View
+                className="h-11 w-11 items-center justify-center rounded-full bg-white"
+                style={softBadgeShadow}
+              >
+                <Svg width={18} height={18} viewBox="0 0 20 20">
+                  <Path d="M10 3v14M3 10h14" stroke={palette.marino} strokeWidth={2.2} strokeLinecap="round" />
+                </Svg>
+              </View>
+              <Text className="text-center text-[13.5px] font-bold text-marino">Crear el mío</Text>
+            </LinearGradient>
           </Pressable>
         </View>
       </ScrollView>
@@ -148,11 +145,7 @@ export function DiaCeroKit() {
           accessibilityRole="button"
           className="flex-row items-center justify-center gap-[7px]"
         >
-          <Svg width={16} height={16} viewBox="0 0 24 24">
-            <Path d="M9 3h6a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" fill={palette.tealProfundo} />
-            <Path d="M5 11a7 7 0 0 0 14 0" stroke={palette.tealProfundo} strokeWidth={2} fill="none" strokeLinecap="round" />
-            <Path d="M12 18v3" stroke={palette.tealProfundo} strokeWidth={2} strokeLinecap="round" />
-          </Svg>
+          <MicIcon color={palette.tealProfundo} size={16} />
           <Text className="text-center text-[13px] font-bold text-teal-profundo">
             O díctale un hábito a EKOU
           </Text>

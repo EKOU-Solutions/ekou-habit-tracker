@@ -3,16 +3,17 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
   Easing,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
+import { BottomSheet } from '@/components/BottomSheet';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
-import { primaryCtaShadow, sheetShadow } from '@/theme/shadows';
+import { primaryCtaShadow } from '@/theme/shadows';
 
 // TODO(IA): propuestas reales generadas a partir del nombre; por ahora las del diseño.
 const PROPOSED_ICONS = ['🧘', '🕯️', '☮️'];
@@ -28,14 +29,8 @@ export function IconIASheet({ habitName, onPick, onClose }: IconIASheetProps) {
   const [selected, setSelected] = useState(PROPOSED_ICONS[0]);
 
   return (
-    <View className="absolute inset-0 z-10">
-      <Pressable
-        onPress={onClose}
-        accessibilityLabel="Cerrar"
-        className="absolute inset-0"
-        style={{ backgroundColor: withAlpha(palette.tinta, 0.32) }}
-      />
-      <PopInSheet>
+    <BottomSheet onClose={onClose} entrance="pop">
+      <View className="px-[22px] pb-[46px] pt-2.5">
         <View className="mx-auto mb-4 h-[5px] w-[38px] rounded-[3px] bg-pista" />
         <View className="flex-row items-center gap-2">
           <Text className="text-[19px]">✨</Text>
@@ -74,8 +69,8 @@ export function IconIASheet({ habitName, onPick, onClose }: IconIASheetProps) {
           </LinearGradient>
         </Pressable>
         <Text className="mt-3.5 text-center text-[13px] font-bold text-morado">Generar 4 más</Text>
-      </PopInSheet>
-    </View>
+      </View>
+    </BottomSheet>
   );
 }
 
@@ -88,18 +83,8 @@ function IconCell({
   selected: boolean;
   onPress: () => void;
 }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      className="aspect-square w-[48%] items-center justify-center rounded-[22px]"
-      style={
-        selected
-          ? { backgroundColor: withAlpha(palette.aguamarina, 0.14), borderWidth: 2.5, borderColor: palette.morado }
-          : { backgroundColor: palette.gris50 }
-      }
-    >
+  const cell = (
+    <>
       <Text className="text-[56px]">{icon}</Text>
       {selected ? (
         <LinearGradient
@@ -120,58 +105,66 @@ function IconCell({
           </Svg>
         </LinearGradient>
       ) : null}
+    </>
+  );
+
+  if (selected) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="radio"
+        accessibilityState={{ selected }}
+        className="aspect-square w-[48%]"
+      >
+        <LinearGradient
+          colors={[withAlpha(palette.aguamarina, 0.14), withAlpha(palette.morado, 0.1)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="h-full w-full items-center justify-center rounded-[22px]"
+          style={{ borderWidth: 2.5, borderColor: palette.morado }}
+        >
+          {cell}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      className="aspect-square w-[48%] items-center justify-center rounded-[22px]"
+      style={{ backgroundColor: palette.gris50 }}
+    >
+      {cell}
     </Pressable>
   );
 }
 
 function GeneratingCell() {
-  const opacity = useSharedValue(0.55);
+  const shimmer = useSharedValue(0);
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.55, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1,
-    );
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
-  return (
-    <Animated.View
-      className="aspect-square w-[48%] items-center justify-center gap-2 rounded-[22px] bg-gris-150"
-      style={animatedStyle}
-    >
-      <Text className="text-[22px] opacity-55">✨</Text>
-      <Text className="text-[11.5px] font-bold tracking-[0.06em] text-gris-500">GENERANDO…</Text>
-    </Animated.View>
-  );
-}
-
-function PopInSheet({ children }: { children: React.ReactNode }) {
-  const scale = useSharedValue(0.94);
-  const translateY = useSharedValue(40);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    scale.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.back(1.4)) });
-    translateY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.ease) });
-    opacity.value = withTiming(1, { duration: 250 });
-  }, [opacity, scale, translateY]);
+    shimmer.value = withRepeat(withTiming(1, { duration: 1400, easing: Easing.linear }), -1);
+  }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
-    opacity: opacity.value,
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-160, 160]) }],
   }));
 
   return (
-    <Animated.View
-      className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white px-[22px] pb-[46px] pt-2.5"
-      style={[sheetShadow, animatedStyle]}
-    >
-      {children}
-    </Animated.View>
+    <View className="aspect-square w-[48%] items-center justify-center gap-2 overflow-hidden rounded-[22px] bg-gris-150">
+      <Animated.View className="absolute inset-0" style={animatedStyle}>
+        <LinearGradient
+          colors={[withAlpha(palette.blanco, 0), withAlpha(palette.blanco, 0.55), withAlpha(palette.blanco, 0)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          className="h-full w-full"
+        />
+      </Animated.View>
+      <Text className="text-[22px] opacity-55">✨</Text>
+      <Text className="text-[11.5px] font-bold tracking-[0.06em] text-gris-500">GENERANDO…</Text>
+    </View>
   );
 }

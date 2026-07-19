@@ -2,8 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 
-import { palette } from '@/theme/palette';
-import { streakChipShadow } from '@/theme/shadows';
+import { gradientPrincipal, palette } from '@/theme/palette';
+import { todayGlowShadow } from '@/theme/shadows';
 
 export type DayKind =
   | { type: 'blank' }
@@ -42,11 +42,11 @@ export function DayRing({ kind }: { kind: DayKind }) {
   if (kind.type === 'today') {
     return (
       <LinearGradient
-        colors={[palette.marino, palette.morado]}
+        colors={gradientPrincipal}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="h-10 w-10 items-center justify-center rounded-full"
-        style={streakChipShadow}
+        style={todayGlowShadow}
       >
         <Text className="text-[13px] font-bold text-white">{kind.day}</Text>
       </LinearGradient>

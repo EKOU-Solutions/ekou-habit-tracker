@@ -2,12 +2,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { DAY_LETTERS } from '@/lib/dates';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
-import { cardShadow } from '@/theme/shadows';
+import { listShadow } from '@/theme/shadows';
 
 type DayState = 'hecho' | 'hoy' | 'pendiente';
-
-const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 // TODO(historial): los días pasados se marcan "hecho" hasta que exista historial persistido.
 function currentWeek(): { letter: string; day: number; state: DayState }[] {
@@ -24,7 +23,7 @@ function currentWeek(): { letter: string; day: number; state: DayState }[] {
 /** Tira semanal L–D de la variante Agenda (1.2e). */
 export function WeeklyStrip() {
   return (
-    <View className="mt-4 flex-row justify-between rounded-[20px] bg-white p-3" style={cardShadow}>
+    <View className="mt-4 flex-row justify-between rounded-[20px] bg-white px-3.5 py-3" style={listShadow}>
       {currentWeek().map((d) => (
         <View key={d.letter} className="w-9 items-center gap-1.5">
           <Text

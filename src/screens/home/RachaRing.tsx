@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -13,6 +13,7 @@ import Animated, {
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 
 import { GradientText } from '@/components/GradientText';
+import { PopIn } from '@/components/PopIn';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 
 const RING_SIZE = 206;
@@ -230,24 +231,4 @@ function ProgresoCenter({
       )}
     </>
   );
-}
-
-function PopIn({ children }: { children: ReactNode }) {
-  const scale = useSharedValue(0.6);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    scale.value = withSequence(
-      withTiming(1.12, { duration: 420, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 180, easing: Easing.inOut(Easing.ease) }),
-    );
-    opacity.value = withTiming(1, { duration: 300 });
-  }, [opacity, scale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }

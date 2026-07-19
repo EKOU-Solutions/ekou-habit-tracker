@@ -12,6 +12,54 @@ export const cardShadow: ViewStyle = {
   elevation: 3,
 };
 
+export const listShadow: ViewStyle = {
+  shadowColor: palette.marino,
+  shadowOpacity: 0.05,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
+};
+
+export const panelShadow: ViewStyle = {
+  shadowColor: palette.marino,
+  shadowOpacity: 0.06,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
+};
+
+export const resultCardShadow: ViewStyle = {
+  shadowColor: palette.marino,
+  shadowOpacity: 0.1,
+  shadowRadius: 30,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 8,
+};
+
+export const knobShadow: ViewStyle = {
+  shadowColor: '#000',
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  shadowOffset: { width: 0, height: 1 },
+  elevation: 2,
+};
+
+export const todayGlowShadow: ViewStyle = {
+  shadowColor: palette.morado,
+  shadowOpacity: 0.4,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 6,
+};
+
+export const crearCtaShadow: ViewStyle = {
+  shadowColor: palette.morado,
+  shadowOpacity: 0.35,
+  shadowRadius: 26,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 10,
+};
+
 export const softBadgeShadow: ViewStyle = {
   shadowColor: palette.marino,
   shadowOpacity: 0.08,

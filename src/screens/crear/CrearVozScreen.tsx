@@ -13,11 +13,13 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
+import { MicIcon } from '@/components/icons';
+import { PopIn } from '@/components/PopIn';
 import { useHabitStore } from '@/store/useHabitStore';
-import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
-import { cardShadow, optionSelectedShadow, softBadgeShadow } from '@/theme/shadows';
+import { gradientIA, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
+import { resultCardShadow, softBadgeShadow, voiceButtonShadow } from '@/theme/shadows';
 
 type Fase = 'escucho' | 'creando' | 'resultado';
 
@@ -65,6 +67,7 @@ export function CrearVozScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
+            hitSlop={8}
             className="h-9 w-9 items-center justify-center rounded-full bg-white"
             style={softBadgeShadow}
           >
@@ -92,37 +95,41 @@ export function CrearVozScreen() {
           <Quote dimmed={fase !== 'escucho'} />
 
           {fase === 'creando' ? <CreandoSteps /> : null}
-          {fase === 'resultado' ? <ResultadoCard onCreate={handleCreate} /> : null}
+          {fase === 'resultado' ? (
+            <ResultadoCard onCreate={handleCreate} onEdit={() => router.replace('/crear/texto')} />
+          ) : null}
         </View>
 
         <View
           className="items-center gap-[18px]"
           style={{ paddingBottom: Math.max(52, insets.bottom + 20) }}
         >
-          {fase === 'escucho' ? (
-            <Pressable onPress={() => setFase('creando')} accessibilityRole="button" accessibilityLabel="Terminar dictado">
-              <PulsingMic />
-            </Pressable>
-          ) : null}
-          {fase === 'creando' ? (
-            <View className="items-center">
+          <View className="h-[84px] items-center justify-center">
+            {fase === 'escucho' ? (
+              <Pressable onPress={() => setFase('creando')} accessibilityRole="button" accessibilityLabel="Terminar dictado">
+                <PulsingMic />
+              </Pressable>
+            ) : null}
+            {fase === 'creando' ? (
               <View className="h-[84px] w-[84px] items-center justify-center rounded-full bg-gris-250 opacity-70">
                 <MicIcon color={palette.gris400} size={32} />
+                <Text className="absolute -bottom-[22px] text-[11.5px] font-semibold text-gris-400">
+                  Procesando…
+                </Text>
               </View>
-              <Text className="mt-1.5 text-[11.5px] font-semibold text-gris-400">Procesando…</Text>
-            </View>
-          ) : null}
-          {fase === 'resultado' ? (
-            <Pressable
-              onPress={() => setFase('escucho')}
-              accessibilityRole="button"
-              className="flex-row items-center gap-2 rounded-3xl bg-white px-5 py-3"
-              style={softBadgeShadow}
-            >
-              <MicIcon color={palette.morado} size={16} />
-              <Text className="text-[14.5px] font-bold text-morado">Volver a dictarlo</Text>
-            </Pressable>
-          ) : null}
+            ) : null}
+            {fase === 'resultado' ? (
+              <Pressable
+                onPress={() => setFase('escucho')}
+                accessibilityRole="button"
+                className="flex-row items-center gap-2 rounded-3xl bg-white px-5 py-3"
+                style={softBadgeShadow}
+              >
+                <MicIcon color={palette.morado} size={16} />
+                <Text className="text-[14.5px] font-bold text-morado">Volver a dictarlo</Text>
+              </Pressable>
+            ) : null}
+          </View>
           <Pressable onPress={() => router.replace('/crear/texto')} accessibilityRole="button">
             <Text className="text-[13.5px] font-semibold text-gris-500">
               ¿No te entiende? <Text className="text-morado">Escríbelo a mano</Text>
@@ -139,7 +146,9 @@ const QUOTE_TEXT_CLASS = 'text-center text-[21px] font-bold leading-[29px] track
 /**
  * La frase dictada con el tramo del hábito en gradiente. Dos capas con métrica idéntica:
  * la base deja el tramo transparente y encima va el gradiente enmascarado solo por esos glifos
- * (un MaskedView inline dentro de Text no fluye con el salto de línea).
+ * (un MaskedView inline dentro de Text no fluye con el salto de línea). El tramo en la máscara
+ * usa marino: en nativo solo importa el alfa; en web (donde masked-view no enmascara) se ve marino,
+ * el mismo fallback que GradientText, no negro.
  */
 function Quote({ dimmed }: { dimmed: boolean }) {
   return (
@@ -152,12 +161,12 @@ function Quote({ dimmed }: { dimmed: boolean }) {
           style={{ flex: 1 }}
           maskElement={
             <Text className={`${QUOTE_TEXT_CLASS} text-transparent`}>
-              «EKOU, quiero <Text className="text-black">{DEMO_HABIT.quote}</Text>»
+              «EKOU, quiero <Text className="text-marino">{DEMO_HABIT.quote}</Text>»
             </Text>
           }
         >
           <LinearGradient
-            colors={[palette.aguamarina, palette.morado]}
+            colors={gradientIA}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
@@ -165,16 +174,6 @@ function Quote({ dimmed }: { dimmed: boolean }) {
         </MaskedView>
       </View>
     </View>
-  );
-}
-
-function MicIcon({ color, size }: { color: string; size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Rect x={9} y={3} width={6} height={11} rx={3} fill={color} />
-      <Path d="M5 11a7 7 0 0 0 14 0" stroke={color} strokeWidth={2} fill="none" strokeLinecap="round" />
-      <Path d="M12 18v3" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
   );
 }
 
@@ -194,11 +193,7 @@ function WaveBar({ height, delayMs }: { height: number; delayMs: number }) {
   useEffect(() => {
     scaleY.value = withDelay(
       delayMs,
-      withRepeat(
-        withTiming(1, { duration: 550, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true,
-      ),
+      withRepeat(withTiming(1, { duration: 550, easing: Easing.inOut(Easing.ease) }), -1, true),
     );
   }, [delayMs, scaleY]);
 
@@ -207,7 +202,7 @@ function WaveBar({ height, delayMs }: { height: number; delayMs: number }) {
   return (
     <Animated.View style={animatedStyle}>
       <LinearGradient
-        colors={[palette.aguamarina, palette.morado]}
+        colors={gradientIA}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         className="w-1 rounded-sm"
@@ -234,6 +229,11 @@ function BreathingOrb() {
 
   return (
     <Animated.View style={animatedStyle}>
+      {/* Halo exterior (box-shadow spread del diseño: 0 0 0 10px rgba(45,204,211,.1)). */}
+      <View
+        className="absolute rounded-full"
+        style={{ top: -10, left: -10, right: -10, bottom: -10, backgroundColor: withAlpha(palette.aguamarina, 0.1) }}
+      />
       <LinearGradient
         colors={[palette.aguamarina, palette.marino, palette.morado]}
         locations={[0, 0.55, 1]}
@@ -300,78 +300,63 @@ function Spinner() {
   );
 }
 
-function ResultadoCard({ onCreate }: { onCreate: () => void }) {
-  const scale = useSharedValue(0.6);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    scale.value = withSequence(
-      withTiming(1.08, { duration: 350, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 150, easing: Easing.inOut(Easing.ease) }),
-    );
-    opacity.value = withTiming(1, { duration: 250 });
-  }, [opacity, scale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
+function ResultadoCard({ onCreate, onEdit }: { onCreate: () => void; onEdit: () => void }) {
   return (
-    <Animated.View style={animatedStyle}>
-      <View className="mt-4 rounded-[24px] bg-white p-[18px]" style={cardShadow}>
-        <View className="flex-row items-center gap-[13px]">
-          <View className="relative h-[50px] w-[50px] items-center justify-center rounded-2xl bg-gris-100">
-            <Text className="text-[25px]">{DEMO_HABIT.icon}</Text>
-            <LinearGradient
-              colors={[palette.aguamarina, palette.morado]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="absolute -right-1.5 -top-1.5 h-5 w-5 items-center justify-center rounded-full"
-            >
-              <Text className="text-[10px]">✨</Text>
-            </LinearGradient>
-          </View>
-          <View className="flex-1">
-            <Text className="text-[17px] font-bold text-tinta">{DEMO_HABIT.name}</Text>
-            <View className="mt-1.5 flex-row gap-1.5">
-              <Text className="rounded-xl bg-aguamarina/[0.16] px-[9px] py-1 text-[11.5px] font-bold text-teal-profundo">
-                Todos los días
-              </Text>
-              <Text className="rounded-xl bg-morado/[0.09] px-[9px] py-1 text-[11.5px] font-bold text-morado">
-                🌙 Noche
-              </Text>
-              <Text className="rounded-xl bg-gris-100 px-[9px] py-1 text-[11.5px] font-bold text-gris-600">
-                ⏱ 10 min
-              </Text>
+    <>
+      <PopIn>
+        <View className="mt-4 rounded-[24px] bg-white p-[18px]" style={resultCardShadow}>
+          <View className="flex-row items-center gap-[13px]">
+            <View className="relative h-[50px] w-[50px] items-center justify-center rounded-2xl bg-gris-100">
+              <Text className="text-[25px]">{DEMO_HABIT.icon}</Text>
+              <LinearGradient
+                colors={gradientIA}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="absolute -right-1.5 -top-1.5 h-5 w-5 items-center justify-center rounded-full"
+              >
+                <Text className="text-[10px]">✨</Text>
+              </LinearGradient>
+            </View>
+            <View className="flex-1">
+              <Text className="text-[17px] font-bold text-tinta">{DEMO_HABIT.name}</Text>
+              <View className="mt-1.5 flex-row gap-1.5">
+                <Text className="rounded-xl bg-aguamarina/[0.16] px-[9px] py-1 text-[11.5px] font-bold text-teal-profundo">
+                  Todos los días
+                </Text>
+                <Text className="rounded-xl bg-morado/[0.09] px-[9px] py-1 text-[11.5px] font-bold text-morado">
+                  🌙 Noche
+                </Text>
+                <Text className="rounded-xl bg-gris-100 px-[9px] py-1 text-[11.5px] font-bold text-gris-600">
+                  ⏱ 10 min
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-        <View className="mt-4 flex-row gap-2.5">
-          <Pressable
-            onPress={() => {}}
-            accessibilityRole="button"
-            className="h-[46px] flex-1 items-center justify-center rounded-full bg-gris-100"
-          >
-            <Text className="text-[15px] font-semibold text-tinta">Editar</Text>
-          </Pressable>
-          <Pressable onPress={onCreate} accessibilityRole="button" style={{ flex: 1.6 }}>
-            <LinearGradient
-              colors={gradientPrincipal}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="h-[46px] items-center justify-center rounded-full"
-              style={optionSelectedShadow}
+          <View className="mt-4 flex-row gap-2.5">
+            <Pressable
+              onPress={onEdit}
+              accessibilityRole="button"
+              className="h-[46px] flex-1 items-center justify-center rounded-full bg-gris-100"
             >
-              <Text className="text-[15px] font-bold text-white">Crear hábito ✓</Text>
-            </LinearGradient>
-          </Pressable>
+              <Text className="text-[15px] font-semibold text-tinta">Editar</Text>
+            </Pressable>
+            <Pressable onPress={onCreate} accessibilityRole="button" style={{ flex: 1.6 }}>
+              <LinearGradient
+                colors={gradientPrincipal}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="h-[46px] items-center justify-center rounded-full"
+              >
+                <Text className="text-[15px] font-bold text-white">Crear hábito ✓</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </PopIn>
       <Text className="mt-3.5 text-center text-[12.5px] text-gris-500">
         Frecuencia y horario se pueden cambiar cuando quieras
       </Text>
-    </Animated.View>
+    </>
   );
 }
 
@@ -392,18 +377,17 @@ function PulsingMic() {
 
   return (
     <Animated.View style={animatedStyle}>
+      {/* Halo exterior (box-shadow spread del diseño: 0 0 0 12px rgba(175,15,125,.08)). */}
+      <View
+        className="absolute rounded-full"
+        style={{ top: -12, left: -12, right: -12, bottom: -12, backgroundColor: withAlpha(palette.morado, 0.08) }}
+      />
       <LinearGradient
         colors={gradientPrincipal}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="h-[84px] w-[84px] items-center justify-center rounded-full"
-        style={{
-          shadowColor: palette.morado,
-          shadowOpacity: 0.4,
-          shadowRadius: 34,
-          shadowOffset: { width: 0, height: 14 },
-          elevation: 12,
-        }}
+        style={voiceButtonShadow}
       >
         <MicIcon color={palette.blanco} size={32} />
       </LinearGradient>

@@ -30,10 +30,9 @@ export const useHabitStore = create<HabitState>()((set) => ({
     })),
   addHabit: (habit) =>
     set((state) => {
-      const exists = state.habits.some(
-        (h) => h.id === habit.id || h.name.toLowerCase() === habit.name.toLowerCase(),
-      );
-      if (exists) return state;
+      // Dedup por id: el kit de día cero usa ids fijos (idempotente al reseleccionar);
+      // los flujos de crear generan ids únicos, así que siempre añaden.
+      if (state.habits.some((h) => h.id === habit.id)) return state;
       return { habits: [...state.habits, { ...habit, doneToday: false }] };
     }),
 }));

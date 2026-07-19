@@ -1,17 +1,16 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Stop } from 'react-native-svg';
 
+import { DAY_LETTERS } from '@/lib/dates';
 import { DayRing, type DayKind } from '@/screens/calendario/DayRing';
 import { RecoverDaySheet } from '@/screens/calendario/RecoverDaySheet';
 import { useHabitStore } from '@/store/useHabitStore';
-import { gradientHistorial, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
+import { capitalizeFirst } from '@/lib/dates';
+import { gradientHistorial, gradientIA, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { cardShadow, heroHistorialShadow, softBadgeShadow } from '@/theme/shadows';
-
-const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 // TODO(persistencia): historial real por día; patrón de ejemplo del diseño hasta que llegue MMKV.
 const DEMO_PCTS: Record<number, number> = {
@@ -43,7 +42,6 @@ function monthGrid(year: number, month: number, today: Date): DayKind[] {
 /** Calendario / historial (3a-b): mes con anillos de cumplimiento y recuperación de días. */
 export function CalendarioScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const streakDays = useHabitStore((s) => s.streakDays);
   const today = new Date();
   const [monthDate, setMonthDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -58,7 +56,7 @@ export function CalendarioScreen() {
       : null;
 
   const monthName = new Intl.DateTimeFormat('es', { month: 'long' }).format(monthDate);
-  const monthTitle = `${monthName.charAt(0).toUpperCase()}${monthName.slice(1)} ${monthDate.getFullYear()}`;
+  const monthTitle = `${capitalizeFirst(monthName)} ${monthDate.getFullYear()}`;
 
   const shiftMonth = (delta: number) => {
     setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + delta, 1));
@@ -80,7 +78,7 @@ export function CalendarioScreen() {
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-extrabold tracking-[-0.4px] text-marino">Historial</Text>
           <View className="flex-row gap-2">
-            <NavButton direction="back" label="Volver" onPress={() => router.back()} />
+            <NavButton direction="back" label="Mes anterior" onPress={() => shiftMonth(-1)} />
             <NavButton direction="forward" label="Mes siguiente" onPress={() => shiftMonth(1)} />
           </View>
         </View>
@@ -88,8 +86,8 @@ export function CalendarioScreen() {
         <LinearGradient
           colors={gradientHistorial.colors}
           locations={gradientHistorial.locations}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0.9 }}
+          start={{ x: 0.12, y: 0 }}
+          end={{ x: 0.88, y: 1 }}
           className="mt-3.5 overflow-hidden rounded-[26px] p-5"
           style={heroHistorialShadow}
         >
@@ -136,22 +134,28 @@ export function CalendarioScreen() {
             ))}
           </View>
           <View className="flex-row flex-wrap">
-            {cells.map((kind, i) => (
-              <Pressable
-                key={i}
-                onPress={() => handleDayPress(kind)}
-                accessibilityRole={kind.type === 'blank' ? 'none' : 'button'}
-                className="mb-1.5 items-center"
-                style={{ width: '14.285%' }}
-              >
-                <DayRing kind={kind} />
-              </Pressable>
-            ))}
+            {cells.map((kind, i) => {
+              const recoverable = kind.type === 'fail' || kind.type === 'pct';
+              return (
+                <Pressable
+                  key={i}
+                  onPress={() => handleDayPress(kind)}
+                  disabled={!recoverable}
+                  accessibilityRole={recoverable ? 'button' : 'none'}
+                  accessibilityLabel={recoverable ? `Recuperar día ${kind.day}` : undefined}
+                  hitSlop={4}
+                  className="mb-1.5 items-center py-0.5"
+                  style={{ width: '14.285%' }}
+                >
+                  <DayRing kind={kind} />
+                </Pressable>
+              );
+            })}
           </View>
           <View className="mt-2 flex-row justify-center gap-4 border-t-[0.5px] border-marino/[0.06] pb-1 pt-3">
             <LegendItem label="completo">
               <LinearGradient
-                colors={[palette.aguamarina, palette.morado]}
+                colors={gradientIA}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="h-3 w-3 rounded-full"
@@ -196,6 +200,7 @@ function NavButton({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      hitSlop={8}
       className="h-9 w-9 items-center justify-center rounded-full bg-white"
       style={softBadgeShadow}
     >
@@ -222,26 +227,18 @@ function LegendItem({ label, children }: { label: string; children: React.ReactN
   );
 }
 
+// Disco relleno con cuña de gradiente al 60% (leyenda 'parcial' del diseño: conic 60% + track).
 function PartialDot() {
   return (
-    <Svg width={12} height={12} viewBox="0 0 12 12" style={{ transform: [{ rotate: '-90deg' }] }}>
+    <Svg width={12} height={12} viewBox="0 0 12 12">
       <Defs>
         <SvgLinearGradient id="legend-partial" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0" stopColor={palette.aguamarina} />
           <Stop offset="1" stopColor={palette.morado} />
         </SvgLinearGradient>
       </Defs>
-      <Circle cx={6} cy={6} r={4.5} fill="none" stroke={palette.anilloTrack} strokeWidth={3} />
-      <Circle
-        cx={6}
-        cy={6}
-        r={4.5}
-        fill="none"
-        stroke="url(#legend-partial)"
-        strokeWidth={3}
-        strokeDasharray={2 * Math.PI * 4.5}
-        strokeDashoffset={2 * Math.PI * 4.5 * 0.4}
-      />
+      <Circle cx={6} cy={6} r={6} fill={palette.anilloTrack} />
+      <Path d="M6 6 L6 0 A6 6 0 1 1 2.47 10.85 Z" fill="url(#legend-partial)" />
     </Svg>
   );
 }

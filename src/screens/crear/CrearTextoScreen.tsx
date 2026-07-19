@@ -13,16 +13,23 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
+import { PopIn } from '@/components/PopIn';
+import { DAY_LETTERS } from '@/lib/dates';
 import { IconIASheet } from '@/screens/crear/IconIASheet';
 import { StepperHeader } from '@/screens/crear/StepperHeader';
 import { useHabitStore } from '@/store/useHabitStore';
-import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
-import { cardShadow, iconTileShadow, optionSelectedShadow, primaryCtaShadow, softBadgeShadow } from '@/theme/shadows';
+import { gradientIA, gradientPrincipal, palette } from '@/theme/palette';
+import {
+  crearCtaShadow,
+  iconTileShadow,
+  knobShadow,
+  optionSelectedShadow,
+  panelShadow,
+} from '@/theme/shadows';
 
 type Frecuencia = 'diario' | 'semana' | 'dias';
 type Momento = 'manana' | 'tarde' | 'noche';
 
-const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const FRECUENCIA_LABELS: Record<Frecuencia, string> = {
   diario: 'Todos los días',
   semana: 'Entre semana',
@@ -52,10 +59,13 @@ export function CrearTextoScreen() {
 
   const canContinue = name.trim().length > 0;
 
+  // Días en orden L–D, no en orden de pulsación.
+  const daysInWeekOrder = DAY_LETTERS.filter((d) => selectedDays.includes(d));
+
   const createHabit = () => {
     const parts = [
-      frecuencia === 'dias' && selectedDays.length > 0
-        ? selectedDays.join(' · ')
+      frecuencia === 'dias' && daysInWeekOrder.length > 0
+        ? daysInWeekOrder.join(' · ')
         : FRECUENCIA_LABELS[frecuencia ?? 'diario'],
       momento ? MOMENTOS.find((m) => m.id === momento)?.label.toLowerCase() : null,
     ].filter(Boolean);
@@ -94,7 +104,7 @@ export function CrearTextoScreen() {
               <View className="relative mb-6 h-[92px] w-[92px] items-center justify-center rounded-[28px] bg-white" style={iconTileShadow}>
                 <Text className="text-[46px]">{icon}</Text>
                 <LinearGradient
-                  colors={[palette.aguamarina, palette.morado]}
+                  colors={gradientIA}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   className="absolute -right-2 -top-2 h-7 w-7 items-center justify-center rounded-full"
@@ -120,7 +130,7 @@ export function CrearTextoScreen() {
                 onPress={() => setShowIASheet(true)}
                 accessibilityRole="button"
                 className="mt-3.5 flex-row items-center gap-1.5 rounded-[18px] bg-white px-[13px] py-2"
-                style={softBadgeShadow}
+                style={panelShadow}
               >
                 <Text className="text-[12.5px] font-bold text-morado">✨ Generar ícono con IA</Text>
               </Pressable>
@@ -141,23 +151,29 @@ export function CrearTextoScreen() {
                 ))}
               </View>
               {frecuencia === 'dias' ? (
-                <View className="mt-3.5 w-full rounded-[22px] bg-white px-3.5 py-4" style={cardShadow}>
-                  <View className="flex-row justify-between gap-1.5">
-                    {DAY_LETTERS.map((d) => (
-                      <DayCircle
-                        key={d}
-                        letter={d}
-                        selected={selectedDays.includes(d)}
-                        onPress={() =>
-                          setSelectedDays((prev) =>
-                            prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d],
-                          )
-                        }
-                      />
-                    ))}
+                <PopIn className="w-full">
+                  <View className="mt-3.5 w-full rounded-[22px] bg-white px-3.5 py-4" style={panelShadow}>
+                    <View className="flex-row justify-between gap-1.5">
+                      {DAY_LETTERS.map((d) => (
+                        <DayCircle
+                          key={d}
+                          letter={d}
+                          selected={selectedDays.includes(d)}
+                          onPress={() =>
+                            setSelectedDays((prev) =>
+                              prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d],
+                            )
+                          }
+                        />
+                      ))}
+                    </View>
+                    <Text className="mt-3 text-xs text-gris-500">
+                      {daysInWeekOrder.length > 0
+                        ? `Toca los días que aplican · ${daysInWeekOrder.join(' · ')}`
+                        : 'Toca los días que aplican'}
+                    </Text>
                   </View>
-                  <Text className="mt-3 text-xs text-gris-500">Toca los días que aplican</Text>
-                </View>
+                </PopIn>
               ) : null}
             </StepPage>
 
@@ -175,7 +191,7 @@ export function CrearTextoScreen() {
                   />
                 ))}
               </View>
-              <View className="mt-4 w-full flex-row items-center gap-3 rounded-[18px] bg-white px-3.5 py-[13px]" style={cardShadow}>
+              <View className="mt-4 w-full flex-row items-center gap-3 rounded-[18px] bg-white px-3.5 py-[13px]" style={panelShadow}>
                 <View className="h-[38px] w-[38px] items-center justify-center rounded-[13px] bg-gris-100">
                   <Text className="text-lg">🔔</Text>
                 </View>
@@ -209,7 +225,7 @@ export function CrearTextoScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="h-14 flex-row items-center justify-center gap-2 rounded-full"
-                style={[primaryCtaShadow, !canContinue && { opacity: 0.5 }]}
+                style={[crearCtaShadow, !canContinue && { opacity: 0.5 }]}
               >
                 <Text className="text-[17px] font-bold text-white">
                   {step === 2 ? 'Crear hábito ✓' : 'Continuar'}
@@ -300,7 +316,7 @@ function FrecuenciaOption({
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       className="h-[54px] items-center justify-center rounded-[27px] bg-white"
-      style={cardShadow}
+      style={panelShadow}
     >
       <Text className="text-[15.5px] font-semibold text-gris-600">{label}</Text>
     </Pressable>
@@ -373,7 +389,7 @@ function MomentoCard({
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       className="flex-1 items-center rounded-[20px] bg-white py-[18px]"
-      style={cardShadow}
+      style={panelShadow}
     >
       <Text className="text-[26px]">{momento.emoji}</Text>
       <Text className="mt-1.5 text-[13px] font-semibold text-gris-600">{momento.label}</Text>
@@ -393,7 +409,7 @@ function Toggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
         >
           <View
             className="absolute right-[3px] h-[22px] w-[22px] rounded-full bg-white"
-            style={{ shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 }}
+            style={knobShadow}
           />
         </LinearGradient>
       </Pressable>
@@ -408,7 +424,7 @@ function Toggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
     >
       <View
         className="absolute left-[3px] h-[22px] w-[22px] rounded-full bg-white"
-        style={{ shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 }}
+        style={knobShadow}
       />
     </Pressable>
   );
