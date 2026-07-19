@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { palette } from '@/theme/palette';
+import { palette, withAlpha } from '@/theme/palette';
 
 const RIPPLE_DURATION_MS = 3600;
 
@@ -36,16 +36,13 @@ function Ripple({ delayMs, borderColor }: { delayMs: number; borderColor: string
   return <Animated.View style={[styles.ripple, { borderColor }, animatedStyle]} />;
 }
 
-/**
- * Orbe de EKOU del onboarding: núcleo estático con tres ondas de eco
- * expandiéndose de forma escalonada (diseño 1.1 del canvas).
- */
+// Orbe de EKOU (diseño 1.1): núcleo estático + tres ondas de eco escalonadas.
 export function EchoOrb() {
   return (
     <View className="h-[170px] items-center justify-center">
-      <Ripple delayMs={0} borderColor="rgba(255,255,255,0.35)" />
-      <Ripple delayMs={1200} borderColor="rgba(45,204,211,0.5)" />
-      <Ripple delayMs={2400} borderColor="rgba(255,255,255,0.2)" />
+      <Ripple delayMs={0} borderColor={withAlpha(palette.blanco, 0.35)} />
+      <Ripple delayMs={1200} borderColor={withAlpha(palette.aguamarina, 0.5)} />
+      <Ripple delayMs={2400} borderColor={withAlpha(palette.blanco, 0.2)} />
       <View className="h-16 w-16 items-center justify-center rounded-full border-[1.5px] border-white/40 bg-white/[0.14]">
         <View className="h-[34px] w-[34px] items-center justify-center rounded-full border-[1.5px] border-white/60">
           <View

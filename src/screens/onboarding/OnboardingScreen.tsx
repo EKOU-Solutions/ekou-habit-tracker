@@ -14,12 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EchoOrb } from '@/screens/onboarding/EchoOrb';
 import { useUserStore } from '@/store/useUserStore';
-import { gradientInmersivo, gradientPrincipal, palette } from '@/theme/palette';
+import { gradientInmersivo, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 
-/**
- * Onboarding 1.1 — una sola pantalla: apodo + "Empezar mi racha".
- * Sin cuentas; el apodo alimenta el saludo de la Home.
- */
+// Onboarding 1.1: una sola pantalla (apodo + "Empezar mi racha"); sin cuentas, alimenta el saludo de la Home.
 export function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const completeOnboarding = useUserStore((s) => s.completeOnboarding);
@@ -69,13 +66,13 @@ export function OnboardingScreen() {
                 value={nickname}
                 onChangeText={setNickname}
                 placeholder="Tu apodo"
-                placeholderTextColor="rgba(255,255,255,0.45)"
+                placeholderTextColor={withAlpha(palette.blanco, 0.45)}
                 selectionColor={palette.aguamarina}
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleStart}
-                className="min-w-0 flex-1 self-stretch py-0 text-lg font-semibold text-white"
-                style={styles.inputText}
+                // text-[18px] en vez de text-lg: un lineHeight explícito descentra el texto tecleado en un TextInput de una sola línea en iOS (el placeholder sí se centra solo).
+                className="min-w-0 flex-1 self-stretch py-0 text-[18px] font-semibold text-white"
               />
             </View>
             <Text className="mt-2 text-xs text-white/50">
@@ -112,7 +109,6 @@ export function OnboardingScreen() {
   );
 }
 
-/** Texto del CTA con el gradiente principal como relleno. */
 function GradientText({ children }: { children: string }) {
   const label = (
     <Text className="text-[17px] font-extrabold">{children}</Text>
@@ -131,12 +127,6 @@ function GradientText({ children }: { children: string }) {
 }
 
 const styles = StyleSheet.create({
-  // El TextInput ocupa toda la altura del campo (self-stretch) sin padding
-  // vertical propio; textAlignVertical centra el texto en Android (iOS ya
-  // centra las entradas de una sola línea).
-  inputText: {
-    textAlignVertical: 'center',
-  },
   ctaShadow: {
     shadowColor: '#000',
     shadowOpacity: 0.25,
