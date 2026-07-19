@@ -6,7 +6,6 @@
 
 - **Demo interactiva (pantallas completas):** https://claude.ai/code/artifact/5f9c9f21-9cf2-49ca-9b48-bee7f2690612
 - **Proyecto en Claude Design (pantallas y flujo):** https://claude.ai/design/p/40184b50-35f3-49a7-aa52-068de6bbea10?file=EKOU+Traking+-+Pantallas+completas.dc.html
-- **Demos en GIF (flujo completo):** ver [`README.md`](../README.md#demo) → carpeta [`doc/assets/`](assets/).
 
 ## 2. Necesidad de negocio
 
