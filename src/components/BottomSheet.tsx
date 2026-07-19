@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { BackHandler, Pressable, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -18,20 +18,31 @@ interface BottomSheetProps {
   children: ReactNode;
 }
 
-/** Andamiaje común de bottom sheet: Modal (botón atrás de Android, foco), backdrop y panel animado. */
+/**
+ * Bottom sheet como overlay absoluto dentro del árbol de la pantalla (no Modal):
+ * un Modal de RN renderiza en una jerarquía nativa separada donde NativeWind pierde
+ * el contexto y los estilos className del contenido no se aplican. El botón atrás de
+ * Android se intercepta con BackHandler para cerrar el sheet en vez de la pantalla.
+ */
 export function BottomSheet({ onClose, entrance = 'slide', children }: BottomSheetProps) {
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [onClose]);
+
   return (
-    <Modal transparent visible animationType="none" onRequestClose={onClose}>
-      <View className="flex-1 justify-end">
-        <Pressable
-          onPress={onClose}
-          accessibilityLabel="Cerrar"
-          className="absolute inset-0"
-          style={{ backgroundColor: withAlpha(palette.tinta, 0.32) }}
-        />
-        <AnimatedPanel entrance={entrance}>{children}</AnimatedPanel>
-      </View>
-    </Modal>
+    <View className="absolute inset-0 z-50 justify-end">
+      <Pressable
+        onPress={onClose}
+        accessibilityLabel="Cerrar"
+        className="absolute inset-0"
+        style={{ backgroundColor: withAlpha(palette.tinta, 0.32) }}
+      />
+      <AnimatedPanel entrance={entrance}>{children}</AnimatedPanel>
+    </View>
   );
 }
 

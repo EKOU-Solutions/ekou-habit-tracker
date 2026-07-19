@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -47,6 +47,7 @@ export function CrearTextoScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const addHabit = useHabitStore((s) => s.addHabit);
+  const nameRef = useRef<TextInput>(null);
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -115,17 +116,23 @@ export function CrearTextoScreen() {
               <Text className="mb-2 text-[15px] font-semibold text-gris-500">
                 ¿Qué hábito quieres crear?
               </Text>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Meditar"
-                placeholderTextColor={palette.gris300}
-                autoCorrect={false}
-                returnKeyType="next"
-                onSubmitEditing={handleContinue}
-                textAlign="center"
-                className="min-w-[200px] self-stretch py-0 text-center text-[30px] font-extrabold tracking-[-0.5px] text-tinta"
-              />
+              <Pressable onPress={() => nameRef.current?.focus()} className="w-full items-center">
+                <TextInput
+                  ref={nameRef}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Meditar"
+                  placeholderTextColor={palette.gris300}
+                  selectionColor={palette.morado}
+                  autoFocus
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={handleContinue}
+                  textAlign="center"
+                  className="h-11 min-w-[200px] max-w-full self-stretch py-0 text-center text-[30px] font-extrabold tracking-[-0.5px] text-tinta"
+                />
+                <View className="mt-1 h-[2px] w-32 rounded-full bg-pista" />
+              </Pressable>
               <Pressable
                 onPress={() => setShowIASheet(true)}
                 accessibilityRole="button"
