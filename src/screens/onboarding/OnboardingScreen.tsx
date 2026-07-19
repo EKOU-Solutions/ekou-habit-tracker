@@ -61,7 +61,7 @@ export function OnboardingScreen() {
             <Text className="mb-2 text-[13px] font-semibold tracking-[0.3px] text-white/[0.65]">
               ¿CÓMO QUIERES QUE TE LLAME?
             </Text>
-            <View className="h-14 flex-row items-center rounded-[18px] border border-white/[0.35] bg-white/[0.13] px-[18px]">
+            <View className="h-[56px] flex-row items-center rounded-[18px] border border-white/[0.35] bg-white/[0.13] px-[18px]">
               <TextInput
                 value={nickname}
                 onChangeText={setNickname}
@@ -71,7 +71,6 @@ export function OnboardingScreen() {
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleStart}
-                // text-[18px] en vez de text-lg: un lineHeight explícito descentra el texto tecleado en un TextInput de una sola línea en iOS (el placeholder sí se centra solo).
                 className="min-w-0 flex-1 self-stretch py-0 text-[18px] font-semibold text-white"
               />
             </View>
