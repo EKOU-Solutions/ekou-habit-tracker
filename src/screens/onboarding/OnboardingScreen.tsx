@@ -74,7 +74,8 @@ export function OnboardingScreen() {
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleStart}
-                className="min-w-0 flex-1 text-lg font-semibold text-white"
+                className="min-w-0 flex-1 self-stretch py-0 text-lg font-semibold text-white"
+                style={styles.inputText}
               />
             </View>
             <Text className="mt-2 text-xs text-white/50">
@@ -130,6 +131,12 @@ function GradientText({ children }: { children: string }) {
 }
 
 const styles = StyleSheet.create({
+  // El TextInput ocupa toda la altura del campo (self-stretch) sin padding
+  // vertical propio; textAlignVertical centra el texto en Android (iOS ya
+  // centra las entradas de una sola línea).
+  inputText: {
+    textAlignVertical: 'center',
+  },
   ctaShadow: {
     shadowColor: '#000',
     shadowOpacity: 0.25,
