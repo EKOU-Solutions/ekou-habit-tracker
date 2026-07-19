@@ -14,9 +14,15 @@ Diseño y flujo completo en Claude Design: [EKOU Tracking — Pantallas completa
 
 ## Cómo se ve
 
-![Vista previa de EKOU Tracking — Onboarding, Home con racha asegurada y creación de hábito por voz](doc/assets/ekou-preview.png)
+Demos en GIF con el flujo completo, fieles al diseño:
 
-*De izquierda a derecha: Onboarding (alta sin fricción), Home con la racha asegurada, y el resultado de crear un hábito por voz.*
+| Onboarding | Home · kit de inicio |
+|:---:|:---:|
+| ![Onboarding de EKOU — alta con apodo, sin cuentas](doc/assets/demo-onboarding.gif) | ![Home de EKOU — elige un hábito para encender la racha](doc/assets/demo-home.gif) |
+| **Crear hábito · por texto** | **Crear hábito · por voz** |
+| ![Crear hábito por texto — nombre, ícono con IA y stepper](doc/assets/demo-crear-texto.gif) | ![Crear hábito por voz — EKOU escucha y interpreta el dictado](doc/assets/demo-crear-voz.gif) |
+
+*Onboarding (alta sin fricción) → Home (encender la racha) → crear un hábito por texto (stepper + ícono con IA) → o dictárselo por voz a EKOU.*
 
 ## En una frase
 

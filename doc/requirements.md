@@ -6,7 +6,7 @@
 
 - **Demo interactiva (pantallas completas):** https://claude.ai/code/artifact/5f9c9f21-9cf2-49ca-9b48-bee7f2690612
 - **Proyecto en Claude Design (pantallas y flujo):** https://claude.ai/design/p/40184b50-35f3-49a7-aa52-068de6bbea10?file=EKOU+Traking+-+Pantallas+completas.dc.html
-- **Tablero en Miro (importado desde Claude Design):** _<!-- PENDIENTE: pegar aquí el enlace del tablero de Miro. Ver nota en la sección 8. -->_
+- **Demos en GIF (flujo completo):** ver [`README.md`](../README.md#demo) → carpeta [`doc/assets/`](assets/).
 
 ## 2. Necesidad de negocio
 
@@ -65,7 +65,10 @@ Estas reglas se derivan directamente del documento de diseño (sección "Princip
 ### 5.2 Marcado y prioridad
 
 - **RN-04** — Marcar un hábito como hecho debe requerir **un solo toque**, disponible desde la Home o desde el widget.
-- **RN-05** — El **hábito prioritario del momento** se muestra siempre en la parte superior (sección "Ahora · esta mañana").
+- **RN-05** — El **hábito principal (prioritario) del momento** se muestra siempre en la parte superior de la Home (sección "Ahora · esta mañana"). Su selección sigue esta lógica:
+  - **Al inicio (día 1):** el hábito principal es el **primero que crea el usuario**.
+  - **A medida que avanzan los días:** el principal pasa a ser el hábito con **mayor racha individual**, es decir, el que el usuario **más ha completado** en el periodo transcurrido. *Ejemplo:* con 3 hábitos, en el día 10 el hábito principal que aparece al comenzar el día es el que **más veces se completó** en esos 10 días.
+  - **Empate:** si dos o más hábitos tienen la misma racha individual, gana el **creado primero** _(criterio a confirmar con negocio)_.
 - **RN-06** — Todos los objetivos táctiles miden **≥ 44 px** (accesibilidad / usabilidad táctil).
 
 ### 5.3 Creación de hábitos
@@ -106,16 +109,7 @@ El flujo empieza en el Onboarding y desemboca siempre en la Home, que es el cent
 - **Plataforma:** el diseño está construido sobre patrones de **iOS** (una sola Home, sheets, widget). Un port a otras plataformas queda fuera de este alcance.
 - Las fechas y datos que aparecen en las pantallas (julio de 2026, "Jouler", rachas de ejemplo) son **datos de maqueta** para pruebas con usuarios.
 
-## 8. Pendiente: importación a Miro
-
-Se solicitó importar el proyecto de Claude Design a **Miro** mediante el conector de Claude Design. No fue posible completarlo automáticamente en esta sesión porque:
-
-1. El conector `claude_design` (autenticación vía `/design-login`) no está conectado en este entorno no interactivo.
-2. La herramienta de importación disponible necesita una **URL pública** del archivo de diseño; la página de Claude Design requiere sesión y no es accesible de esa forma desde el servidor.
-
-**Acción sugerida:** ejecutar la importación desde una sesión interactiva con el conector de Claude Design/Miro autenticado, y luego pegar el enlace del tablero en la sección 1.
-
-## 9. Documentación relacionada
+## 8. Documentación relacionada
 
 - [doc/ux-ui-guidelines.md](ux-ui-guidelines.md) — principios de UX, sistema visual e inventario de pantallas.
 - [README.md](../README.md) — visión general del producto y demo.
