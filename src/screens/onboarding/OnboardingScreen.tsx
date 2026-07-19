@@ -1,5 +1,6 @@
-import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,13 +13,15 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GradientText } from '@/components/GradientText';
 import { EchoOrb } from '@/screens/onboarding/EchoOrb';
 import { useUserStore } from '@/store/useUserStore';
-import { gradientInmersivo, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
+import { gradientInmersivo, palette, withAlpha } from '@/theme/palette';
 
 // Onboarding 1.1: una sola pantalla (apodo + "Empezar mi racha"); sin cuentas, alimenta el saludo de la Home.
 export function OnboardingScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const completeOnboarding = useUserStore((s) => s.completeOnboarding);
   const [nickname, setNickname] = useState('');
 
@@ -27,11 +30,12 @@ export function OnboardingScreen() {
   const handleStart = () => {
     if (!canStart) return;
     completeOnboarding(nickname);
-    // TODO: navegar a la Home (1.2) cuando exista esa pantalla.
+    router.replace('/home');
   };
 
   return (
     <View className="flex-1">
+      <StatusBar style="light" />
       <LinearGradient
         colors={gradientInmersivo.colors}
         locations={gradientInmersivo.locations}
@@ -93,7 +97,9 @@ export function OnboardingScreen() {
               className="h-[58px] w-full flex-row items-center justify-center gap-x-2 rounded-full bg-white active:opacity-90"
               style={[styles.ctaShadow, !canStart && styles.ctaDisabled]}
             >
-              <GradientText>Empezar mi racha</GradientText>
+              <GradientText className="text-[17px] font-extrabold">
+                Empezar mi racha
+              </GradientText>
               <Text className="text-base" style={{ color: palette.morado }}>
                 →
               </Text>
@@ -105,23 +111,6 @@ export function OnboardingScreen() {
         </View>
       </KeyboardAvoidingView>
     </View>
-  );
-}
-
-function GradientText({ children }: { children: string }) {
-  const label = (
-    <Text className="text-[17px] font-extrabold">{children}</Text>
-  );
-  return (
-    <MaskedView maskElement={label}>
-      <LinearGradient
-        colors={gradientPrincipal}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Text className="text-[17px] font-extrabold opacity-0">{children}</Text>
-      </LinearGradient>
-    </MaskedView>
   );
 }
 
