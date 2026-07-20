@@ -72,7 +72,7 @@ export function PriorityHabitCard({
               {isRiesgo ? 'tócalo y salva tu racha 🔥' : habit.scheduleLabel}
             </Text>
           </View>
-          <PriorityCheck pulse={isRiesgo} />
+          <PriorityCheck pulse={isRiesgo} done={habit.doneToday} />
         </LinearGradient>
       </Pressable>
     </Animated.View>
@@ -119,7 +119,8 @@ function GlowNudge() {
   );
 }
 
-function PriorityCheck({ pulse }: { pulse: boolean }) {
+/** Estado checked del diseño: círculo blanco relleno con el check en morado. */
+function PriorityCheck({ pulse, done }: { pulse: boolean; done: boolean }) {
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -147,13 +148,18 @@ function PriorityCheck({ pulse }: { pulse: boolean }) {
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: 23,
-          borderWidth: 2,
-          borderColor: withAlpha(palette.blanco, 0.65),
+          ...(done
+            ? { backgroundColor: palette.blanco }
+            : { borderWidth: 2, borderColor: withAlpha(palette.blanco, 0.65) }),
         },
         animatedStyle,
       ]}
     >
-      <CheckIcon color={withAlpha(palette.blanco, 0.65)} width={16} height={13} />
+      <CheckIcon
+        color={done ? palette.morado : withAlpha(palette.blanco, 0.65)}
+        width={16}
+        height={13}
+      />
     </Animated.View>
   );
 }
