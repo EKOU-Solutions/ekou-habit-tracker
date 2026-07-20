@@ -3,4 +3,6 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, { input: './global.css' });
+// inlineRem 16: NativeWind usa rem=14 en nativo por defecto, encogiendo h-14, text-base, etc.
+// respecto al diseño (y a web, donde 1rem=16px).
+module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });

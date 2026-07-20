@@ -6,7 +6,29 @@ export const palette = {
   morado: '#AF0F7D',
   ciruela: '#4B1268',
   blanco: '#FFFFFF',
+  tinta: '#101C4D',
+  moradoClaro: '#C265A4',
+  anilloTrack: '#E9EBF4',
+  anilloTrackRiesgo: '#F3E2ED',
+  gris400: '#AAB0C6',
+  gris350: '#B0B5C8',
+  gris300: '#C3C8D9',
+  gris250: '#E7E9F1',
+  gris150: '#EDEFF6',
+  gris100: '#F1F3FA',
+  gris50: '#F8F9FD',
+  pista: '#E2E5F0',
+  fondo: '#F9F9F9',
 } as const;
+
+/** Historial: linear-gradient(140deg, #001A70, #4B1268 60%, #AF0F7D) — hero del calendario. */
+export const gradientHistorial = {
+  colors: [palette.marino, palette.ciruela, palette.morado] as const,
+  locations: [0, 0.6, 1] as const,
+} as const;
+
+/** Aguamarina → morado: anillos de progreso (SVG) y badges de IA (✨). */
+export const gradientIA = [palette.aguamarina, palette.morado] as const;
 
 /** Principal: linear-gradient(135deg, #001A70, #AF0F7D) — racha, voz y CTA. */
 export const gradientPrincipal = [palette.marino, palette.morado] as const;
