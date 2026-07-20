@@ -38,7 +38,10 @@ export function RachaRing({ streakDays, checkedCount, totalCount }: RachaRingPro
   const ring = (
     <View style={{ width: RING_SIZE, height: RING_SIZE }}>
       {isRiesgo ? <RiesgoGlow /> : null}
+      {/* key fuerza remount al cambiar de estado: react-native-svg no limpia strokeDasharray
+          al reutilizar los Circle y el anillo normal heredaba los puntos del estado riesgo. */}
       <Svg
+        key={isRiesgo ? 'anillo-riesgo' : 'anillo-progreso'}
         width={RING_SIZE}
         height={RING_SIZE}
         viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
@@ -115,9 +118,18 @@ function RiesgoGlow() {
 
   return (
     <Animated.View
-      className="absolute rounded-full border-8"
+      // Sin className: en nativo Reanimated ignora el interop de NativeWind.
       style={[
-        { top: 6, left: 6, right: 6, bottom: 6, borderColor: withAlpha(palette.morado, 0.28) },
+        {
+          position: 'absolute',
+          top: 6,
+          left: 6,
+          right: 6,
+          bottom: 6,
+          borderRadius: (RING_SIZE - 12) / 2,
+          borderWidth: 8,
+          borderColor: withAlpha(palette.morado, 0.28),
+        },
         animatedStyle,
       ]}
     />

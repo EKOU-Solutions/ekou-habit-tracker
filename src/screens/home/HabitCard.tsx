@@ -97,9 +97,14 @@ function GlowNudge() {
 
   return (
     <Animated.View
-      className="absolute inset-0 rounded-[24px]"
       style={[
         {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderRadius: 24,
           shadowColor: palette.morado,
           shadowOpacity: 0.5,
           shadowRadius: 32,
@@ -135,8 +140,18 @@ function PriorityCheck({ pulse }: { pulse: boolean }) {
 
   return (
     <Animated.View
-      className="h-[46px] w-[46px] items-center justify-center rounded-full border-2 border-white/65"
-      style={animatedStyle}
+      style={[
+        {
+          height: 46,
+          width: 46,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 23,
+          borderWidth: 2,
+          borderColor: withAlpha(palette.blanco, 0.65),
+        },
+        animatedStyle,
+      ]}
     >
       <CheckIcon color={withAlpha(palette.blanco, 0.65)} width={16} height={13} />
     </Animated.View>

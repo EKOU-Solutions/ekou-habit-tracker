@@ -69,8 +69,17 @@ function AnimatedPanel({ entrance, children }: { entrance: 'pop' | 'slide'; chil
 
   return (
     <Animated.View
-      className="rounded-t-[28px] bg-white"
-      style={[sheetShadow, { transformOrigin: 'bottom' }, animatedStyle]}
+      // Sin className: en nativo Reanimated ignora el interop de NativeWind (sheet transparente).
+      style={[
+        sheetShadow,
+        {
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
+          backgroundColor: palette.blanco,
+          transformOrigin: 'bottom',
+        },
+        animatedStyle,
+      ]}
     >
       {children}
     </Animated.View>

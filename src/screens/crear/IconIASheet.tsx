@@ -155,7 +155,9 @@ function GeneratingCell() {
 
   return (
     <View className="aspect-square w-[48%] items-center justify-center gap-2 overflow-hidden rounded-[22px] bg-gris-150">
-      <Animated.View className="absolute inset-0" style={animatedStyle}>
+      <Animated.View
+        style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, animatedStyle]}
+      >
         <LinearGradient
           colors={[withAlpha(palette.blanco, 0), withAlpha(palette.blanco, 0.55), withAlpha(palette.blanco, 0)]}
           start={{ x: 0, y: 0 }}

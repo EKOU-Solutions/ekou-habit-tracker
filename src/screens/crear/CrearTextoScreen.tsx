@@ -158,7 +158,7 @@ export function CrearTextoScreen() {
                 ))}
               </View>
               {frecuencia === 'dias' ? (
-                <PopIn className="w-full">
+                <PopIn style={{ width: '100%' }}>
                   <View className="mt-3.5 w-full rounded-[22px] bg-white px-3.5 py-4" style={panelShadow}>
                     <View className="flex-row justify-between gap-1.5">
                       {DAY_LETTERS.map((d) => (
@@ -278,7 +278,10 @@ function StepTrack({ step, width, children }: { step: number; width: number; chi
 
   return (
     <View className="-mx-7 flex-1 overflow-hidden">
-      <Animated.View className="h-full flex-row" style={[{ width: width * 3 }, animatedStyle]}>
+      {/* Sin className: en nativo Reanimated ignora el interop y el track colapsaba a altura 0. */}
+      <Animated.View
+        style={[{ height: '100%', flexDirection: 'row', width: width * 3 }, animatedStyle]}
+      >
         {children}
       </Animated.View>
     </View>

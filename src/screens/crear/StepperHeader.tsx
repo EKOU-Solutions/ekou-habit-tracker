@@ -26,8 +26,10 @@ function ProgressBar({ filled }: { filled: boolean }) {
   return (
     <View className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-pista">
       <Animated.View
-        className="h-full overflow-hidden rounded-[3px]"
-        style={[{ transformOrigin: 'left' }, animatedStyle]}
+        style={[
+          { height: '100%', overflow: 'hidden', borderRadius: 3, transformOrigin: 'left' },
+          animatedStyle,
+        ]}
       >
         <LinearGradient
           colors={gradientPrincipal}

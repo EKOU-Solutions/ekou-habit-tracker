@@ -294,8 +294,17 @@ function Spinner() {
 
   return (
     <Animated.View
-      className="h-[18px] w-[18px] rounded-full border-2"
-      style={[{ borderColor: palette.pista, borderTopColor: palette.morado }, animatedStyle]}
+      style={[
+        {
+          height: 18,
+          width: 18,
+          borderRadius: 9,
+          borderWidth: 2,
+          borderColor: palette.pista,
+          borderTopColor: palette.morado,
+        },
+        animatedStyle,
+      ]}
     />
   );
 }

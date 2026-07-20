@@ -31,8 +31,9 @@ import {
   voiceButtonShadow,
 } from '@/theme/shadows';
 
-// TODO(Ajustes): preferencia editable cuando exista la pantalla de Ajustes; 'agenda' activa la variante 1.2e.
-const HOME_LAYOUT: 'anillo' | 'agenda' = 'anillo';
+// TODO(Ajustes): preferencia editable cuando exista la pantalla de Ajustes; 'agenda' (1.2e)
+// muestra el chip de racha y la tira semanal.
+const HOME_LAYOUT: 'anillo' | 'agenda' = 'agenda';
 
 // "Lo prioritario, siempre arriba": el hábito del momento es el prioritario pendiente,
 // si no cualquier pendiente, y con el día completo se mantiene el primero (layout 1.2d).

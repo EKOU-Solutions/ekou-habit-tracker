@@ -1,8 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { cssInterop } from 'nativewind';
-import Animated from 'react-native-reanimated';
 
-// NativeWind solo interopera los componentes core de react-native; sin estos registros,
-// className sobre LinearGradient o Animated.View se ignora en silencio (sin radio, sin flex…).
+// NativeWind solo interopera los componentes core de react-native; sin este registro,
+// className sobre LinearGradient se ignora en silencio (sin radio, sin padding).
+// OJO: NO registrar componentes de Reanimated (Animated.View): su pipeline de props
+// ignora el interop en nativo aunque funcione en web — usar objetos style en ellos.
 cssInterop(LinearGradient, { className: 'style' });
-cssInterop(Animated.View, { className: 'style' });

@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import type { ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -7,8 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-/** popIn del diseño: scale .6 → 1.12 → 1 con fade-in. */
-export function PopIn({ children, className }: { children: ReactNode; className?: string }) {
+/** popIn del diseño: scale .6 → 1.12 → 1 con fade-in. Sin className: Reanimated ignora el interop en nativo. */
+export function PopIn({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const scale = useSharedValue(0.6);
   const opacity = useSharedValue(0);
 
@@ -25,9 +26,5 @@ export function PopIn({ children, className }: { children: ReactNode; className?
     opacity: opacity.value,
   }));
 
-  return (
-    <Animated.View className={className} style={animatedStyle}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
 }

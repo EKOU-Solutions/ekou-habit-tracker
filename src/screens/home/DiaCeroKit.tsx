@@ -96,23 +96,28 @@ export function DiaCeroKit() {
               onPress={() => toggleSelected(habit.id)}
             />
           ))}
-          <Pressable onPress={() => router.push('/crear/texto')} accessibilityRole="button" className="w-[48.5%]">
+          {/* El gradiente va como fondo absoluto: un h-full dentro de una fila wrap de altura
+              automática crea una dependencia circular en Yoga y estiraba toda la fila. */}
+          <Pressable
+            onPress={() => router.push('/crear/texto')}
+            accessibilityRole="button"
+            className="w-[48.5%] items-center justify-center gap-1.5 overflow-hidden rounded-[22px] border-[1.5px] border-dashed border-marino/[0.18] p-4"
+          >
             <LinearGradient
               colors={[withAlpha(palette.marino, 0.05), withAlpha(palette.morado, 0.07)]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0.87, y: 0.5 }}
-              className="h-full items-center justify-center gap-1.5 rounded-[22px] border-[1.5px] border-dashed border-marino/[0.18] p-4"
+              className="absolute inset-0"
+            />
+            <View
+              className="h-11 w-11 items-center justify-center rounded-full bg-white"
+              style={softBadgeShadow}
             >
-              <View
-                className="h-11 w-11 items-center justify-center rounded-full bg-white"
-                style={softBadgeShadow}
-              >
-                <Svg width={18} height={18} viewBox="0 0 20 20">
-                  <Path d="M10 3v14M3 10h14" stroke={palette.marino} strokeWidth={2.2} strokeLinecap="round" />
-                </Svg>
-              </View>
-              <Text className="text-center text-[13.5px] font-bold text-marino">Crear el mío</Text>
-            </LinearGradient>
+              <Svg width={18} height={18} viewBox="0 0 20 20">
+                <Path d="M10 3v14M3 10h14" stroke={palette.marino} strokeWidth={2.2} strokeLinecap="round" />
+              </Svg>
+            </View>
+            <Text className="text-center text-[13.5px] font-bold text-marino">Crear el mío</Text>
           </Pressable>
         </View>
       </ScrollView>
