@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
 import { CheckIcon } from '@/components/icons';
-import { capitalizeFirst, formatDayMonth } from '@/lib/dates';
-import { useHabitStore } from '@/store/useHabitStore';
+import { capitalizeFirst, formatDayMonth, toDateKey } from '@/lib/dates';
+import { useDoneIds, useHabitStore, useStreak } from '@/store/useHabitStore';
 import { palette } from '@/theme/palette';
 
 interface RecoverDaySheetProps {
@@ -15,11 +14,10 @@ interface RecoverDaySheetProps {
 /** Bottom sheet 3b: marcar lo que se hizo un día anterior para recuperarlo y recalcular la racha. */
 export function RecoverDaySheet({ date, onClose }: RecoverDaySheetProps) {
   const habits = useHabitStore((s) => s.habits);
-  const streakDays = useHabitStore((s) => s.streakDays);
-  const [checkedIds, setCheckedIds] = useState<string[]>([]);
-
-  const toggle = (id: string) =>
-    setCheckedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggleDone = useHabitStore((s) => s.toggleDone);
+  const dateKey = toDateKey(date);
+  const checkedIds = useDoneIds(dateKey);
+  const streakDays = useStreak();
 
   return (
     <BottomSheet onClose={onClose} entrance="slide">
@@ -32,7 +30,7 @@ export function RecoverDaySheet({ date, onClose }: RecoverDaySheetProps) {
         {habits.map((habit, index) => (
           <Pressable
             key={habit.id}
-            onPress={() => toggle(habit.id)}
+            onPress={() => toggleDone(habit.id, dateKey)}
             accessibilityRole="checkbox"
             accessibilityLabel={habit.name}
             accessibilityState={{ checked: checkedIds.includes(habit.id) }}
@@ -53,8 +51,7 @@ export function RecoverDaySheet({ date, onClose }: RecoverDaySheetProps) {
         ))}
         {checkedIds.length > 0 ? (
           <Text className="mt-3.5 text-center text-[13px] font-bold text-teal-profundo">
-            {/* TODO(persistencia): recálculo real de la racha; +3 replica el ejemplo del diseño (12 → 15). */}
-            ✓ Día recuperado · tu racha ahora es de {streakDays + 3}
+            ✓ Día recuperado · tu racha ahora es de {streakDays}
           </Text>
         ) : null}
       </View>

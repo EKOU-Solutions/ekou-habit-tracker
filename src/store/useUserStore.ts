@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import { storage } from '@/lib/storage';
 
 interface UserState {
   nickname: string;
@@ -6,10 +9,13 @@ interface UserState {
   completeOnboarding: (nickname: string) => void;
 }
 
-// Estado en memoria; MMKV se añade cuando el proyecto tenga development build (no funciona en Expo Go).
-export const useUserStore = create<UserState>()((set) => ({
-  nickname: '',
-  hasOnboarded: false,
-  completeOnboarding: (nickname) =>
-    set({ nickname: nickname.trim(), hasOnboarded: true }),
-}));
+export const useUserStore = create<UserState>()(
+  persist(
+    (set) => ({
+      nickname: '',
+      hasOnboarded: false,
+      completeOnboarding: (nickname) => set({ nickname: nickname.trim(), hasOnboarded: true }),
+    }),
+    { name: 'ekou-user', storage: createJSONStorage(() => storage) },
+  ),
+);

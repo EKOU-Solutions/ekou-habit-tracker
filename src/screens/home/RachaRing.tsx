@@ -32,7 +32,8 @@ interface RachaRingProps {
 
 /** Anillo de racha de Home (1.2b-d): riesgo, asegurada o día completo, según los hábitos marcados hoy. */
 export function RachaRing({ streakDays, checkedCount, totalCount }: RachaRingProps) {
-  const isRiesgo = checkedCount === 0;
+  // Sin racha acumulada no hay nada que perder: el estado riesgo solo aplica con racha viva.
+  const isRiesgo = checkedCount === 0 && streakDays > 0;
   const isCompleto = !isRiesgo && checkedCount >= totalCount;
 
   const ring = (
@@ -234,11 +235,15 @@ function ProgresoCenter({
         >
           <Text className="text-xs font-extrabold text-white">día perfecto ✦</Text>
         </LinearGradient>
-      ) : (
+      ) : checkedCount > 0 ? (
         <View className="mt-1 rounded-full bg-aguamarina/[0.16] px-[11px] py-[3px]">
           <Text className="text-xs font-bold text-teal-profundo">
             ✓ asegurada · {checkedCount} de {totalCount}
           </Text>
+        </View>
+      ) : (
+        <View className="mt-1 rounded-full bg-gris-100 px-[11px] py-[3px]">
+          <Text className="text-xs font-bold text-gris-500">hoy · 0 de {totalCount}</Text>
         </View>
       )}
     </>

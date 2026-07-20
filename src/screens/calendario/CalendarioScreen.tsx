@@ -4,37 +4,40 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Stop } from 'react-native-svg';
 
-import { DAY_LETTERS } from '@/lib/dates';
+import { capitalizeFirst, DAY_LETTERS, toDateKey } from '@/lib/dates';
+import { firstActivityKey, type HabitHistory } from '@/lib/streak';
 import { DayRing, type DayKind } from '@/screens/calendario/DayRing';
 import { RecoverDaySheet } from '@/screens/calendario/RecoverDaySheet';
-import { useHabitStore } from '@/store/useHabitStore';
-import { capitalizeFirst } from '@/lib/dates';
+import { useBestStreak, useHabitStore, useStreak } from '@/store/useHabitStore';
 import { gradientHistorial, gradientIA, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { cardShadow, heroHistorialShadow, softBadgeShadow } from '@/theme/shadows';
 
-// TODO(persistencia): historial real por día; patrón de ejemplo del diseño hasta que llegue MMKV.
-const DEMO_PCTS: Record<number, number> = {
-  4: 100, 5: 100, 6: 80, 7: 100, 8: 100, 9: 100, 10: 60,
-  11: 100, 12: 100, 13: 100, 14: 100, 15: 100, 16: 60, 17: 100, 18: 100,
-};
-const DEMO_FAIL_DAY = 3;
-const DEMO_BEST_STREAK = 21;
-
-function monthGrid(year: number, month: number, today: Date): DayKind[] {
+function monthGrid(
+  year: number,
+  month: number,
+  today: Date,
+  history: HabitHistory,
+  totalHabits: number,
+): DayKind[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const mondayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
-  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
-  const isPastMonth = new Date(year, month + 1, 0) < today;
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const firstActivity = firstActivityKey(history);
 
   const cells: DayKind[] = Array.from({ length: mondayOffset }, () => ({ type: 'blank' }));
   for (let day = 1; day <= daysInMonth; day++) {
-    if (isCurrentMonth && day === today.getDate()) cells.push({ type: 'today', day });
-    else if (isCurrentMonth && day > today.getDate()) cells.push({ type: 'future', day });
-    else if (!isCurrentMonth && !isPastMonth) cells.push({ type: 'future', day });
-    else if (!isCurrentMonth) cells.push({ type: 'off', day });
-    else if (day === DEMO_FAIL_DAY) cells.push({ type: 'fail', day });
-    else if (DEMO_PCTS[day] !== undefined) cells.push({ type: 'pct', day, pct: DEMO_PCTS[day] });
-    else cells.push({ type: 'off', day });
+    const date = new Date(year, month, day);
+    const key = toDateKey(date);
+    const doneCount = history[key]?.length ?? 0;
+    if (date.getTime() === todayStart.getTime()) cells.push({ type: 'today', day });
+    else if (date > todayStart) cells.push({ type: 'future', day });
+    // Los días anteriores al primer registro no cuentan como fallo: el app aún no se usaba.
+    else if (firstActivity === null || key < firstActivity) cells.push({ type: 'off', day });
+    else if (doneCount === 0) cells.push({ type: 'fail', day });
+    else {
+      const pct = Math.min(100, Math.round((doneCount / Math.max(totalHabits, 1)) * 100));
+      cells.push({ type: 'pct', day, pct });
+    }
   }
   return cells;
 }
@@ -42,12 +45,15 @@ function monthGrid(year: number, month: number, today: Date): DayKind[] {
 /** Calendario / historial (3a-b): mes con anillos de cumplimiento y recuperación de días. */
 export function CalendarioScreen() {
   const insets = useSafeAreaInsets();
-  const streakDays = useHabitStore((s) => s.streakDays);
+  const habits = useHabitStore((s) => s.habits);
+  const history = useHabitStore((s) => s.history);
+  const streakDays = useStreak();
+  const bestStreakDays = useBestStreak();
   const today = new Date();
   const [monthDate, setMonthDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [recoverDay, setRecoverDay] = useState<number | null>(null);
 
-  const cells = monthGrid(monthDate.getFullYear(), monthDate.getMonth(), today);
+  const cells = monthGrid(monthDate.getFullYear(), monthDate.getMonth(), today, history, habits.length);
   const pastPcts = cells.filter((c): c is Extract<DayKind, { type: 'pct' }> => c.type === 'pct');
   const failCount = cells.filter((c) => c.type === 'fail').length;
   const compliance =
@@ -109,7 +115,7 @@ export function CalendarioScreen() {
                 <Text className="text-base font-semibold text-white/75">días</Text>
               </View>
               <Text className="mt-1 text-[13.5px] text-white/[0.72]">
-                Tu racha viva · mejor: {DEMO_BEST_STREAK} días
+                Tu racha viva · mejor: {bestStreakDays} días
               </Text>
             </View>
           </View>

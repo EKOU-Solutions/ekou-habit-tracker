@@ -2,29 +2,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { DAY_LETTERS } from '@/lib/dates';
+import { DAY_LETTERS, toDateKey } from '@/lib/dates';
+import type { HabitHistory } from '@/lib/streak';
+import { useHabitStore } from '@/store/useHabitStore';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { listShadow } from '@/theme/shadows';
 
 type DayState = 'hecho' | 'hoy' | 'pendiente';
 
-// TODO(historial): los días pasados se marcan "hecho" hasta que exista historial persistido.
-function currentWeek(): { letter: string; day: number; state: DayState }[] {
+function currentWeek(history: HabitHistory): { letter: string; day: number; state: DayState }[] {
   const today = new Date();
   const mondayOffset = (today.getDay() + 6) % 7;
   return DAY_LETTERS.map((letter, i) => {
     const date = new Date(today);
     date.setDate(today.getDate() - mondayOffset + i);
-    const state: DayState = i < mondayOffset ? 'hecho' : i === mondayOffset ? 'hoy' : 'pendiente';
+    const hasDone = (history[toDateKey(date)]?.length ?? 0) > 0;
+    const state: DayState = i === mondayOffset ? 'hoy' : hasDone ? 'hecho' : 'pendiente';
     return { letter, day: date.getDate(), state };
   });
 }
 
 /** Tira semanal L–D de la variante Agenda (1.2e). */
 export function WeeklyStrip() {
+  const history = useHabitStore((s) => s.history);
   return (
     <View className="mt-4 flex-row justify-between rounded-[20px] bg-white px-3.5 py-3" style={listShadow}>
-      {currentWeek().map((d) => (
+      {currentWeek(history).map((d) => (
         <View key={d.letter} className="w-9 items-center gap-1.5">
           <Text
             className={`text-[10px] ${d.state === 'hoy' ? 'font-bold text-marino' : 'font-semibold text-gris-350'}`}

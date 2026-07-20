@@ -16,12 +16,12 @@ import Svg, { Path, Rect } from 'react-native-svg';
 
 import { AvatarBadge } from '@/components/AvatarBadge';
 import { MicIcon } from '@/components/icons';
-import { formatDayMonth } from '@/lib/dates';
+import { formatDayMonth, todayKey } from '@/lib/dates';
 import { DiaCeroKit } from '@/screens/home/DiaCeroKit';
 import { HabitRow, PriorityHabitCard } from '@/screens/home/HabitCard';
 import { RachaRing } from '@/screens/home/RachaRing';
 import { WeeklyStrip } from '@/screens/home/WeeklyStrip';
-import { useHabitStore, type Habit } from '@/store/useHabitStore';
+import { useDoneIds, useHabitStore, useStreak, type HabitStatus } from '@/store/useHabitStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gradientPrincipal, palette } from '@/theme/palette';
 import {
@@ -37,7 +37,7 @@ const HOME_LAYOUT: 'anillo' | 'agenda' = 'agenda';
 
 // "Lo prioritario, siempre arriba": el hábito del momento es el prioritario pendiente,
 // si no cualquier pendiente, y con el día completo se mantiene el primero (layout 1.2d).
-function habitOfTheMoment(habits: Habit[]): Habit | undefined {
+function habitOfTheMoment(habits: HabitStatus[]): HabitStatus | undefined {
   return (
     habits.find((h) => h.isPriority && !h.doneToday) ??
     habits.find((h) => !h.doneToday) ??
@@ -49,20 +49,25 @@ function habitOfTheMoment(habits: Habit[]): Habit | undefined {
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const nickname = useUserStore((s) => s.nickname);
-  const habits = useHabitStore((s) => s.habits);
-  const streakDays = useHabitStore((s) => s.streakDays);
-  const toggleHabit = useHabitStore((s) => s.toggleHabit);
+  const storedHabits = useHabitStore((s) => s.habits);
+  const toggleDone = useHabitStore((s) => s.toggleDone);
+  const doneIds = useDoneIds(todayKey());
+  const streakDays = useStreak();
 
-  if (habits.length === 0) return <DiaCeroKit />;
+  if (storedHabits.length === 0) return <DiaCeroKit />;
 
+  const habits: HabitStatus[] = storedHabits.map((h) => ({
+    ...h,
+    doneToday: doneIds.includes(h.id),
+  }));
   const priorityHabit = habitOfTheMoment(habits);
   const restHabits = habits.filter((h) => h.id !== priorityHabit?.id);
   const checkedCount = habits.filter((h) => h.doneToday).length;
-  const isRiesgo = checkedCount === 0;
+  const isRiesgo = checkedCount === 0 && streakDays > 0;
   const isAgenda = HOME_LAYOUT === 'agenda';
 
-  const handleToggle = (habit: Habit) => {
-    toggleHabit(habit.id);
+  const handleToggle = (habit: HabitStatus) => {
+    toggleDone(habit.id);
     if (Platform.OS === 'web') return;
     const completesDay =
       !habit.doneToday && habits.filter((h) => h.doneToday || h.id === habit.id).length === habits.length;

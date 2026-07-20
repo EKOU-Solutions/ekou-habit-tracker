@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { CheckIcon } from '@/components/icons';
-import type { Habit } from '@/store/useHabitStore';
+import type { HabitStatus } from '@/store/useHabitStore';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { priorityCardShadow } from '@/theme/shadows';
 
@@ -21,7 +21,7 @@ export function PriorityHabitCard({
   isRiesgo,
   onPress,
 }: {
-  habit: Habit;
+  habit: HabitStatus;
   isRiesgo: boolean;
   onPress: () => void;
 }) {
@@ -170,7 +170,7 @@ export function HabitRow({
   onPress,
   isLast,
 }: {
-  habit: Habit;
+  habit: HabitStatus;
   onPress: () => void;
   isLast: boolean;
 }) {

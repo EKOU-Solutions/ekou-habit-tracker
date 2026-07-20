@@ -7,39 +7,11 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AvatarBadge } from '@/components/AvatarBadge';
 import { MicIcon } from '@/components/icons';
-import { useHabitStore, type Habit } from '@/store/useHabitStore';
+import { STARTER_HABITS, STARTER_PRESELECTED, type StarterHabit } from '@/data/starterHabits';
+import { useHabitStore } from '@/store/useHabitStore';
 import { useUserStore } from '@/store/useUserStore';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { cardShadow, primaryCtaShadow, softBadgeShadow } from '@/theme/shadows';
-
-interface StarterHabit extends Omit<Habit, 'doneToday' | 'isPriority'> {
-  accent: string;
-}
-
-const STARTER_HABITS: StarterHabit[] = [
-  {
-    id: 'agua',
-    name: 'Tomar agua',
-    icon: '💧',
-    scheduleLabel: 'Todos los días',
-    accent: withAlpha(palette.aguamarina, 0.16),
-  },
-  {
-    id: 'meditar',
-    name: 'Meditar',
-    icon: '🧘',
-    scheduleLabel: '10 min · mañana',
-    accent: withAlpha(palette.morado, 0.1),
-  },
-  {
-    id: 'leer',
-    name: 'Leer',
-    icon: '📖',
-    scheduleLabel: '20 min · noche',
-    accent: withAlpha(palette.marino, 0.08),
-    timerLabel: '20:00',
-  },
-];
 
 /** Home 1.2a — día cero: kit de inicio con hábitos sugeridos, sin racha todavía. */
 export function DiaCeroKit() {
@@ -47,7 +19,7 @@ export function DiaCeroKit() {
   const router = useRouter();
   const nickname = useUserStore((s) => s.nickname);
   const addHabit = useHabitStore((s) => s.addHabit);
-  const [selectedIds, setSelectedIds] = useState<string[]>(['agua']);
+  const [selectedIds, setSelectedIds] = useState<string[]>(STARTER_PRESELECTED);
 
   const toggleSelected = (id: string) =>
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
