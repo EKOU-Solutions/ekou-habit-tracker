@@ -10,6 +10,7 @@ export const palette = {
   moradoClaro: '#C265A4',
   anilloTrack: '#E9EBF4',
   anilloTrackRiesgo: '#F3E2ED',
+  gris500: '#8A90A8',
   gris400: '#AAB0C6',
   gris350: '#B0B5C8',
   gris300: '#C3C8D9',

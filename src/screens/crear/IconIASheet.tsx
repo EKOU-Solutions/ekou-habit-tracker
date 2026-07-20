@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -12,11 +12,11 @@ import Animated, {
 import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/BottomSheet';
+import { proposeIcons } from '@/lib/iconAI';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { primaryCtaShadow } from '@/theme/shadows';
 
-// TODO(IA): propuestas reales generadas a partir del nombre; por ahora las del diseño.
-const PROPOSED_ICONS = ['🧘', '🕯️', '☮️'];
+const SLOT_COUNT = 4;
 
 interface IconIASheetProps {
   habitName: string;
@@ -24,9 +24,42 @@ interface IconIASheetProps {
   onClose: () => void;
 }
 
-/** Sheet 2.1e — Ícono con IA: propuestas, celda "generando…", descripción propia y CTA de uso. */
+/** Sheet 2.1e — Ícono con IA: propuestas on-device, "generar 4 más", descripción propia y CTA de uso. */
 export function IconIASheet({ habitName, onPick, onClose }: IconIASheetProps) {
-  const [selected, setSelected] = useState(PROPOSED_ICONS[0]);
+  const [icons, setIcons] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [describe, setDescribe] = useState('');
+  const queryRef = useRef(habitName);
+  const seenRef = useRef<string[]>([]);
+  const aliveRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+
+  const generate = useCallback(async (query: string, fresh: boolean) => {
+    queryRef.current = query;
+    if (fresh) seenRef.current = [];
+    setLoading(true);
+    const next = await proposeIcons({ query, exclude: seenRef.current, count: SLOT_COUNT });
+    if (!aliveRef.current) return;
+    seenRef.current = [...seenRef.current, ...next];
+    setIcons(next);
+    setSelected(next[0] ?? null);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    generate(habitName, true);
+  }, [generate, habitName]);
+
+  const handleDescribe = () => {
+    if (describe.trim().length === 0 || loading) return;
+    generate(describe.trim(), true);
+  };
 
   return (
     <BottomSheet onClose={onClose} entrance="pop">
@@ -37,38 +70,64 @@ export function IconIASheet({ habitName, onPick, onClose }: IconIASheetProps) {
           <Text className="text-[21px] font-extrabold tracking-[-0.3px] text-tinta">Ícono con IA</Text>
         </View>
         <Text className="mt-[5px] text-[13.5px] text-gris-500">
-          Propuestas para <Text className="font-bold text-tinta">«{habitName}»</Text>
+          Propuestas para <Text className="font-bold text-tinta">«{queryRef.current}»</Text>
         </Text>
 
         <View className="mt-[18px] flex-row flex-wrap justify-between gap-y-3">
-          {PROPOSED_ICONS.map((icon) => (
-            <IconCell
-              key={icon}
-              icon={icon}
-              selected={icon === selected}
-              onPress={() => setSelected(icon)}
-            />
-          ))}
-          <GeneratingCell />
+          {loading
+            ? Array.from({ length: SLOT_COUNT }, (_, i) => <GeneratingCell key={i} />)
+            : icons.map((icon) => (
+                <IconCell
+                  key={icon}
+                  icon={icon}
+                  selected={icon === selected}
+                  onPress={() => setSelected(icon)}
+                />
+              ))}
         </View>
 
         <View className="mt-4 flex-row items-center gap-2.5 rounded-[22px] bg-gris-100 px-4 py-3">
-          <Text className="flex-1 text-sm text-gris-500">Descríbelo tú · «flor de loto»…</Text>
-          <Text className="text-[15px]">✨</Text>
+          <TextInput
+            value={describe}
+            onChangeText={setDescribe}
+            placeholder="Descríbelo tú · «flor de loto»…"
+            placeholderTextColor={palette.gris500}
+            returnKeyType="send"
+            onSubmitEditing={handleDescribe}
+            className="flex-1 p-0 text-sm text-tinta"
+          />
+          <Pressable
+            onPress={handleDescribe}
+            accessibilityRole="button"
+            accessibilityLabel="Generar con tu descripción"
+            hitSlop={8}
+          >
+            <Text className="text-[15px]">✨</Text>
+          </Pressable>
         </View>
 
-        <Pressable onPress={() => onPick(selected)} accessibilityRole="button">
+        <Pressable
+          onPress={() => selected && onPick(selected)}
+          disabled={!selected}
+          accessibilityRole="button"
+        >
           <LinearGradient
             colors={gradientPrincipal}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="mt-4 h-[54px] items-center justify-center rounded-full"
-            style={primaryCtaShadow}
+            style={[primaryCtaShadow, !selected && { opacity: 0.5 }]}
           >
             <Text className="text-[16.5px] font-bold text-white">Usar este ícono</Text>
           </LinearGradient>
         </Pressable>
-        <Text className="mt-3.5 text-center text-[13px] font-bold text-morado">Generar 4 más</Text>
+        <Pressable
+          onPress={() => !loading && generate(queryRef.current, false)}
+          accessibilityRole="button"
+          accessibilityLabel="Generar 4 más"
+        >
+          <Text className="mt-3.5 text-center text-[13px] font-bold text-morado">Generar 4 más</Text>
+        </Pressable>
       </View>
     </BottomSheet>
   );
