@@ -1,7 +1,7 @@
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -17,44 +17,77 @@ import Svg, { Path } from 'react-native-svg';
 
 import { MicIcon } from '@/components/icons';
 import { PopIn } from '@/components/PopIn';
+import { useVoiceCapture } from '@/hooks/useVoiceCapture';
+import { FRECUENCIA_LABELS, MOMENTOS } from '@/lib/habitSchedule';
+import { interpretSpokenHabit, type VoiceHabit } from '@/lib/voice';
 import { useHabitStore } from '@/store/useHabitStore';
 import { gradientIA, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { resultCardShadow, softBadgeShadow, voiceButtonShadow } from '@/theme/shadows';
 
 type Fase = 'escucho' | 'creando' | 'resultado';
 
-// TODO(voz): dictado y parseo reales (requiere STT nativo, fuera del stack actual); demo fiel a 2.2a-c.
-const DEMO_HABIT = { name: 'Meditar', icon: '🧘', quote: 'meditar 10 minutos cada noche' };
 const WAVE_HEIGHTS = [18, 34, 48, 28, 44, 22, 38, 16, 30];
-const CREANDO_MS = 2200;
+// El spinner "creando" se muestra al menos esto para que la interpretación no parpadee.
+const MIN_CREANDO_MS = 1400;
 
 /** Crear hábito por voz (2.2a-c): EKOU escucha, procesa y devuelve el hábito interpretado. */
 export function CrearVozScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const addHabit = useHabitStore((s) => s.addHabit);
+  const { transcript, state, error, start, stop } = useVoiceCapture();
   const [fase, setFase] = useState<Fase>('escucho');
+  const [result, setResult] = useState<VoiceHabit | null>(null);
+  const transcriptRef = useRef('');
+  transcriptRef.current = transcript;
 
+  // Empezar a escuchar al abrir la pantalla y volver a hacerlo al re-dictar.
   useEffect(() => {
-    if (fase !== 'creando') return;
-    const timer = setTimeout(() => setFase('resultado'), CREANDO_MS);
-    return () => clearTimeout(timer);
-  }, [fase]);
+    if (fase === 'escucho') void start();
+  }, [fase, start]);
+
+  const handleFinish = () => {
+    stop();
+    setFase('creando');
+    const startedAt = Date.now();
+    void (async () => {
+      const spoken = transcriptRef.current.trim();
+      const habit = spoken.length > 0 ? await interpretSpokenHabit(spoken) : null;
+      const wait = Math.max(0, MIN_CREANDO_MS - (Date.now() - startedAt));
+      setTimeout(() => {
+        if (habit) {
+          setResult(habit);
+          setFase('resultado');
+        } else {
+          setFase('escucho');
+        }
+      }, wait);
+    })();
+  };
 
   const handleCreate = () => {
+    if (!result) return;
     addHabit({
       id: `habito-${Date.now()}`,
-      name: DEMO_HABIT.name,
-      icon: DEMO_HABIT.icon,
-      scheduleLabel: 'Todos los días · noche',
+      name: result.name,
+      icon: result.icon,
+      scheduleLabel: result.scheduleLabel,
       isPriority: false,
-      frequency: 'diario',
-      days: [],
-      moment: 'noche',
-      reminder: true,
+      frequency: result.frequency,
+      days: result.days,
+      moment: result.moment ?? undefined,
+      reminder: result.reminder,
+      timerLabel: result.timerLabel,
     });
     router.back();
   };
+
+  const quoteText =
+    transcript.trim().length > 0
+      ? transcript.trim()
+      : state === 'error'
+        ? (error ?? 'No pude escucharte')
+        : 'Dime tu hábito…';
 
   return (
     <View className="flex-1 bg-fondo">
@@ -96,11 +129,11 @@ export function CrearVozScreen() {
             {fase === 'creando' ? <BreathingOrb /> : null}
           </View>
 
-          <Quote dimmed={fase !== 'escucho'} />
+          <Quote text={quoteText} dimmed={fase !== 'escucho'} />
 
           {fase === 'creando' ? <CreandoSteps /> : null}
-          {fase === 'resultado' ? (
-            <ResultadoCard onCreate={handleCreate} onEdit={() => router.replace('/crear/texto')} />
+          {fase === 'resultado' && result ? (
+            <ResultadoCard habit={result} onCreate={handleCreate} onEdit={() => router.replace('/crear/texto')} />
           ) : null}
         </View>
 
@@ -110,7 +143,7 @@ export function CrearVozScreen() {
         >
           <View className="h-[84px] items-center justify-center">
             {fase === 'escucho' ? (
-              <Pressable onPress={() => setFase('creando')} accessibilityRole="button" accessibilityLabel="Terminar dictado">
+              <Pressable onPress={handleFinish} accessibilityRole="button" accessibilityLabel="Terminar dictado">
                 <PulsingMic />
               </Pressable>
             ) : null}
@@ -148,33 +181,22 @@ export function CrearVozScreen() {
 const QUOTE_TEXT_CLASS = 'text-center text-[21px] font-bold leading-[29px] tracking-[-0.3px]';
 
 /**
- * La frase dictada con el tramo del hábito en gradiente. Dos capas con métrica idéntica:
- * la base deja el tramo transparente y encima va el gradiente enmascarado solo por esos glifos
- * (un MaskedView inline dentro de Text no fluye con el salto de línea). El tramo en la máscara
- * usa marino: en nativo solo importa el alfa; en web (donde masked-view no enmascara) se ve marino,
+ * La frase dictada en vivo, en gradiente. Dos capas con métrica idéntica: la base deja el texto
+ * transparente y encima va el gradiente enmascarado por esos glifos. En la máscara el texto usa
+ * marino: en nativo solo importa el alfa; en web (donde masked-view no enmascara) se ve marino,
  * el mismo fallback que GradientText, no negro.
  */
-function Quote({ dimmed }: { dimmed: boolean }) {
+function Quote({ text, dimmed }: { text: string; dimmed: boolean }) {
+  const quoted = `«${text}»`;
   return (
     <View className="mt-[18px] min-h-[60px]" style={{ opacity: dimmed ? 0.55 : 1 }}>
-      <Text className={`${QUOTE_TEXT_CLASS} text-tinta`}>
-        «EKOU, quiero <Text className="text-transparent">{DEMO_HABIT.quote}</Text>»
-      </Text>
+      <Text className={`${QUOTE_TEXT_CLASS} text-transparent`}>{quoted}</Text>
       <View className="absolute inset-0" pointerEvents="none">
         <MaskedView
           style={{ flex: 1 }}
-          maskElement={
-            <Text className={`${QUOTE_TEXT_CLASS} text-transparent`}>
-              «EKOU, quiero <Text className="text-marino">{DEMO_HABIT.quote}</Text>»
-            </Text>
-          }
+          maskElement={<Text className={`${QUOTE_TEXT_CLASS} text-marino`}>{quoted}</Text>}
         >
-          <LinearGradient
-            colors={gradientIA}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ flex: 1 }}
-          />
+          <LinearGradient colors={gradientIA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }} />
         </MaskedView>
       </View>
     </View>
@@ -313,14 +335,27 @@ function Spinner() {
   );
 }
 
-function ResultadoCard({ onCreate, onEdit }: { onCreate: () => void; onEdit: () => void }) {
+function ResultadoCard({
+  habit,
+  onCreate,
+  onEdit,
+}: {
+  habit: VoiceHabit;
+  onCreate: () => void;
+  onEdit: () => void;
+}) {
+  const momento = habit.moment ? MOMENTOS.find((m) => m.id === habit.moment) : null;
+  const frecuenciaLabel =
+    habit.frequency === 'dias' && habit.days.length > 0
+      ? habit.days.join(' · ')
+      : FRECUENCIA_LABELS[habit.frequency];
   return (
     <>
       <PopIn>
         <View className="mt-4 rounded-[24px] bg-white p-[18px]" style={resultCardShadow}>
           <View className="flex-row items-center gap-[13px]">
             <View className="relative h-[50px] w-[50px] items-center justify-center rounded-2xl bg-gris-100">
-              <Text className="text-[25px]">{DEMO_HABIT.icon}</Text>
+              <Text className="text-[25px]">{habit.icon}</Text>
               <LinearGradient
                 colors={gradientIA}
                 start={{ x: 0, y: 0 }}
@@ -331,17 +366,21 @@ function ResultadoCard({ onCreate, onEdit }: { onCreate: () => void; onEdit: () 
               </LinearGradient>
             </View>
             <View className="flex-1">
-              <Text className="text-[17px] font-bold text-tinta">{DEMO_HABIT.name}</Text>
-              <View className="mt-1.5 flex-row gap-1.5">
+              <Text className="text-[17px] font-bold text-tinta">{habit.name}</Text>
+              <View className="mt-1.5 flex-row flex-wrap gap-1.5">
                 <Text className="rounded-xl bg-aguamarina/[0.16] px-[9px] py-1 text-[11.5px] font-bold text-teal-profundo">
-                  Todos los días
+                  {frecuenciaLabel}
                 </Text>
-                <Text className="rounded-xl bg-morado/[0.09] px-[9px] py-1 text-[11.5px] font-bold text-morado">
-                  🌙 Noche
-                </Text>
-                <Text className="rounded-xl bg-gris-100 px-[9px] py-1 text-[11.5px] font-bold text-gris-600">
-                  ⏱ 10 min
-                </Text>
+                {momento ? (
+                  <Text className="rounded-xl bg-morado/[0.09] px-[9px] py-1 text-[11.5px] font-bold text-morado">
+                    {momento.emoji} {momento.label}
+                  </Text>
+                ) : null}
+                {habit.timerLabel ? (
+                  <Text className="rounded-xl bg-gris-100 px-[9px] py-1 text-[11.5px] font-bold text-gris-600">
+                    ⏱ {habit.timerLabel}
+                  </Text>
+                ) : null}
               </View>
             </View>
           </View>
