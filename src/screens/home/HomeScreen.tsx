@@ -1,8 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
@@ -15,6 +17,7 @@ import Animated, {
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { AvatarBadge } from '@/components/AvatarBadge';
+import { ConfirmDeleteHabit } from '@/components/ConfirmDeleteHabit';
 import { MicIcon } from '@/components/icons';
 import { formatDayMonth, todayKey } from '@/lib/dates';
 import { DiaCeroKit } from '@/screens/home/DiaCeroKit';
@@ -48,11 +51,14 @@ function habitOfTheMoment(habits: HabitStatus[]): HabitStatus | undefined {
 
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const nickname = useUserStore((s) => s.nickname);
   const storedHabits = useHabitStore((s) => s.habits);
   const toggleDone = useHabitStore((s) => s.toggleDone);
+  const removeHabit = useHabitStore((s) => s.removeHabit);
   const doneIds = useDoneIds(todayKey());
   const streakDays = useStreak();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   if (storedHabits.length === 0) return <DiaCeroKit />;
 
@@ -117,22 +123,127 @@ export function HomeScreen() {
         {restHabits.length > 0 ? (
           <>
             <SectionLabel topMargin="mt-4">HOY</SectionLabel>
-            <View className="rounded-[24px] bg-white" style={listShadow}>
+            <View className="overflow-hidden rounded-[24px] bg-white" style={listShadow}>
               {restHabits.map((habit, index) => (
-                <HabitRow
+                <SwipeableHabitRow
                   key={habit.id}
                   habit={habit}
                   isLast={index === restHabits.length - 1}
                   onPress={() => handleToggle(habit)}
+                  onEdit={() => router.push(`/editar/${habit.id}`)}
+                  onDelete={() => setDeleteId(habit.id)}
                 />
               ))}
             </View>
+            <Text className="mt-2.5 text-center text-xs text-gris-400">
+              Desliza cualquier hábito para editar o eliminar
+            </Text>
           </>
         ) : null}
       </ScrollView>
 
       <BottomActions bottomInset={insets.bottom} />
+
+      {deleteId ? (
+        <ConfirmDeleteHabit
+          habitName={storedHabits.find((h) => h.id === deleteId)?.name ?? ''}
+          onConfirm={() => {
+            removeHabit(deleteId);
+            setDeleteId(null);
+          }}
+          onCancel={() => setDeleteId(null)}
+        />
+      ) : null}
     </View>
+  );
+}
+
+/** Fila de hábito con swipe a la izquierda que revela Editar (marino) y Eliminar (morado) (4a). */
+function SwipeableHabitRow({
+  habit,
+  isLast,
+  onPress,
+  onEdit,
+  onDelete,
+}: {
+  habit: HabitStatus;
+  isLast: boolean;
+  onPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const renderActions = (
+    _progress: unknown,
+    _translation: unknown,
+    swipeable: SwipeableMethods,
+  ) => (
+    <View className="flex-row">
+      <SwipeAction
+        label="Editar"
+        color={palette.marino}
+        onPress={() => {
+          swipeable.close();
+          onEdit();
+        }}
+      >
+        <Path
+          d="M4 13.5V16h2.5l7.4-7.4-2.5-2.5L4 13.5zM15.8 6.7a.7.7 0 000-1l-1.5-1.5a.7.7 0 00-1 0l-1.2 1.2 2.5 2.5 1.2-1.2z"
+          fill={palette.blanco}
+        />
+      </SwipeAction>
+      <SwipeAction
+        label="Eliminar"
+        color={palette.morado}
+        onPress={() => {
+          swipeable.close();
+          onDelete();
+        }}
+      >
+        <Path
+          d="M6 7h8l-.7 8.2a1.5 1.5 0 01-1.5 1.3H8.2a1.5 1.5 0 01-1.5-1.3L6 7zm2-2.2c0-.4.3-.8.8-.8h2.4c.5 0 .8.4.8.8V5h2.5v1.2H5.5V5H8v-.2z"
+          fill={palette.blanco}
+        />
+      </SwipeAction>
+    </View>
+  );
+
+  return (
+    <ReanimatedSwipeable
+      renderRightActions={renderActions}
+      overshootRight={false}
+      friction={1.6}
+      rightThreshold={40}
+      childrenContainerStyle={{ backgroundColor: palette.blanco }}
+    >
+      <HabitRow habit={habit} isLast={isLast} onPress={onPress} />
+    </ReanimatedSwipeable>
+  );
+}
+
+function SwipeAction({
+  label,
+  color,
+  onPress,
+  children,
+}: {
+  label: string;
+  color: string;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="h-full w-[72px] items-center justify-center gap-1"
+      style={{ backgroundColor: color }}
+    >
+      <Svg width={20} height={20} viewBox="0 0 20 20">
+        {children}
+      </Svg>
+      <Text className="text-[11px] font-bold text-white">{label}</Text>
+    </Pressable>
   );
 }
 

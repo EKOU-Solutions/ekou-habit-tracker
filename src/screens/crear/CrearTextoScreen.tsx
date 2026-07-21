@@ -14,32 +14,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { PopIn } from '@/components/PopIn';
+import { DayCircle, MomentoCard, Toggle } from '@/components/ScheduleControls';
 import { DAY_LETTERS } from '@/lib/dates';
+import {
+  buildScheduleLabel,
+  FRECUENCIA_LABELS,
+  MOMENTOS,
+  type Frecuencia,
+  type Momento,
+} from '@/lib/habitSchedule';
 import { IconIASheet } from '@/screens/crear/IconIASheet';
 import { StepperHeader } from '@/screens/crear/StepperHeader';
 import { useHabitStore } from '@/store/useHabitStore';
 import { gradientIA, gradientPrincipal, palette } from '@/theme/palette';
-import {
-  crearCtaShadow,
-  iconTileShadow,
-  knobShadow,
-  optionSelectedShadow,
-  panelShadow,
-} from '@/theme/shadows';
-
-type Frecuencia = 'diario' | 'semana' | 'dias';
-type Momento = 'manana' | 'tarde' | 'noche';
-
-const FRECUENCIA_LABELS: Record<Frecuencia, string> = {
-  diario: 'Todos los días',
-  semana: 'Entre semana',
-  dias: 'Días elegidos',
-};
-const MOMENTOS: { id: Momento; emoji: string; label: string; reminder: string }[] = [
-  { id: 'manana', emoji: '☀️', label: 'Mañana', reminder: '08:00 · sugerido para la mañana' },
-  { id: 'tarde', emoji: '🌤️', label: 'Tarde', reminder: '15:00 · sugerido para la tarde' },
-  { id: 'noche', emoji: '🌙', label: 'Noche', reminder: '21:00 · sugerido para la noche' },
-];
+import { crearCtaShadow, iconTileShadow, optionSelectedShadow, panelShadow } from '@/theme/shadows';
 
 /** Crear hábito por texto (2.1a-e): stepper nombre+ícono → frecuencia → horario+recordatorio. */
 export function CrearTextoScreen() {
@@ -64,18 +52,16 @@ export function CrearTextoScreen() {
   const daysInWeekOrder = DAY_LETTERS.filter((d) => selectedDays.includes(d));
 
   const createHabit = () => {
-    const parts = [
-      frecuencia === 'dias' && daysInWeekOrder.length > 0
-        ? daysInWeekOrder.join(' · ')
-        : FRECUENCIA_LABELS[frecuencia ?? 'diario'],
-      momento ? MOMENTOS.find((m) => m.id === momento)?.label.toLowerCase() : null,
-    ].filter(Boolean);
     addHabit({
       id: `habito-${Date.now()}`,
       name: name.trim(),
       icon,
-      scheduleLabel: parts.join(' · '),
+      scheduleLabel: buildScheduleLabel(frecuencia, selectedDays, momento),
       isPriority: false,
+      frequency: frecuencia ?? 'diario',
+      days: frecuencia === 'dias' ? selectedDays : [],
+      moment: momento ?? undefined,
+      reminder,
     });
     router.back();
   };
@@ -333,109 +319,3 @@ function FrecuenciaOption({
   );
 }
 
-function DayCircle({
-  letter,
-  selected,
-  onPress,
-}: {
-  letter: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  if (selected) {
-    return (
-      <Pressable onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked: selected }}>
-        <LinearGradient
-          colors={gradientPrincipal}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="h-[38px] w-[38px] items-center justify-center rounded-full"
-        >
-          <Text className="text-[13px] font-bold text-white">{letter}</Text>
-        </LinearGradient>
-      </Pressable>
-    );
-  }
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: selected }}
-      className="h-[38px] w-[38px] items-center justify-center rounded-full bg-gris-100"
-    >
-      <Text className="text-[13px] font-semibold text-gris-500">{letter}</Text>
-    </Pressable>
-  );
-}
-
-function MomentoCard({
-  momento,
-  selected,
-  onPress,
-}: {
-  momento: { emoji: string; label: string };
-  selected: boolean;
-  onPress: () => void;
-}) {
-  if (selected) {
-    return (
-      <Pressable onPress={onPress} accessibilityRole="radio" accessibilityState={{ selected }} className="flex-1">
-        <LinearGradient
-          colors={gradientPrincipal}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="items-center rounded-[20px] py-[18px]"
-          style={optionSelectedShadow}
-        >
-          <Text className="text-[26px]">{momento.emoji}</Text>
-          <Text className="mt-1.5 text-[13px] font-bold text-white">{momento.label}</Text>
-        </LinearGradient>
-      </Pressable>
-    );
-  }
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      className="flex-1 items-center rounded-[20px] bg-white py-[18px]"
-      style={panelShadow}
-    >
-      <Text className="text-[26px]">{momento.emoji}</Text>
-      <Text className="mt-1.5 text-[13px] font-semibold text-gris-600">{momento.label}</Text>
-    </Pressable>
-  );
-}
-
-function Toggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
-  if (value) {
-    return (
-      <Pressable onPress={onToggle} accessibilityRole="switch" accessibilityState={{ checked: value }}>
-        <LinearGradient
-          colors={gradientPrincipal}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="h-7 w-[46px] justify-center rounded-full"
-        >
-          <View
-            className="absolute right-[3px] h-[22px] w-[22px] rounded-full bg-white"
-            style={knobShadow}
-          />
-        </LinearGradient>
-      </Pressable>
-    );
-  }
-  return (
-    <Pressable
-      onPress={onToggle}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
-      className="h-7 w-[46px] justify-center rounded-full bg-gris-300"
-    >
-      <View
-        className="absolute left-[3px] h-[22px] w-[22px] rounded-full bg-white"
-        style={knobShadow}
-      />
-    </Pressable>
-  );
-}

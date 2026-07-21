@@ -48,6 +48,10 @@ export function CrearVozScreen() {
       icon: DEMO_HABIT.icon,
       scheduleLabel: 'Todos los días · noche',
       isPriority: false,
+      frequency: 'diario',
+      days: [],
+      moment: 'noche',
+      reminder: true,
     });
     router.back();
   };
