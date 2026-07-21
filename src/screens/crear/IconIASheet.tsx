@@ -12,7 +12,7 @@ import Animated, {
 import Svg, { Path } from 'react-native-svg';
 
 import { BottomSheet } from '@/components/BottomSheet';
-import { proposeIcons } from '@/lib/iconAI';
+import { proposeIcons } from '@/lib/icons';
 import { gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { primaryCtaShadow } from '@/theme/shadows';
 
