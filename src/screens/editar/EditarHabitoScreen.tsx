@@ -16,25 +16,55 @@ import {
   type Momento,
 } from '@/lib/habitSchedule';
 import { IconIASheet } from '@/screens/crear/IconIASheet';
+import { useHabitDraftStore } from '@/store/useHabitDraftStore';
 import { useHabitStore } from '@/store/useHabitStore';
 import { gradientIA, gradientPrincipal, palette } from '@/theme/palette';
 import { crearCtaShadow, iconTileShadow, panelShadow, softBadgeShadow } from '@/theme/shadows';
+
+/** Datos precargados desde el dictado por voz cuando aún no existe el hábito (id="nuevo"). */
+interface Draft {
+  name: string;
+  icon?: string;
+  frequency?: Frecuencia;
+  days?: string[];
+  moment?: Momento | null;
+  reminder?: boolean;
+  timerLabel?: string;
+}
 
 /** Editar hábito (4b): una sola pantalla con scroll; cambia ícono (IA), nombre, frecuencia, momento y recordatorio. */
 export function EditarHabitoScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const habit = useHabitStore((s) => s.habits.find((h) => h.id === id));
+  const { id, draft } = useLocalSearchParams<{ id: string; draft?: string }>();
+  const storedHabit = useHabitStore((s) => s.habits.find((h) => h.id === id));
+  const addHabit = useHabitStore((s) => s.addHabit);
   const updateHabit = useHabitStore((s) => s.updateHabit);
   const removeHabit = useHabitStore((s) => s.removeHabit);
 
-  const [name, setName] = useState(habit?.name ?? '');
-  const [icon, setIcon] = useState(habit?.icon ?? '🧘');
-  const [frecuencia, setFrecuencia] = useState<Frecuencia>(habit?.frequency ?? 'diario');
-  const [selectedDays, setSelectedDays] = useState<string[]>(habit?.days ?? []);
-  const [momento, setMomento] = useState<Momento | null>(habit?.moment ?? null);
-  const [reminder, setReminder] = useState(habit?.reminder ?? true);
+  // Modo "nuevo": llegamos desde la preview de voz con un borrador; el hábito se crea al guardar.
+  // Preferimos el store en memoria (navegación normal); el param `draft` queda como respaldo
+  // por si se abre la ruta en frío (deep-link).
+  const draftFromStore = useHabitDraftStore((s) => s.draft);
+  const draftHabit = useMemo<Draft | null>(() => {
+    if (id === 'nuevo' && draftFromStore) return draftFromStore;
+    if (!draft) return null;
+    try {
+      return JSON.parse(draft) as Draft;
+    } catch {
+      return null;
+    }
+  }, [draft, draftFromStore, id]);
+  const isNew = draftHabit !== null;
+  const source = storedHabit ?? draftHabit;
+  const timerLabel = source?.timerLabel;
+
+  const [name, setName] = useState(source?.name ?? '');
+  const [icon, setIcon] = useState(source?.icon ?? '🧘');
+  const [frecuencia, setFrecuencia] = useState<Frecuencia>(source?.frequency ?? 'diario');
+  const [selectedDays, setSelectedDays] = useState<string[]>(source?.days ?? []);
+  const [momento, setMomento] = useState<Momento | null>(source?.moment ?? null);
+  const [reminder, setReminder] = useState(source?.reminder ?? true);
   const [showIASheet, setShowIASheet] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -43,27 +73,33 @@ export function EditarHabitoScreen() {
     [momento],
   );
 
-  // El hábito pudo borrarse (confirmación) mientras la pantalla sigue montada.
-  if (!habit) return <View className="flex-1 bg-fondo" />;
+  // Sin hábito guardado ni borrador no hay nada que editar (p. ej. tras borrarlo).
+  if (!source) return <View className="flex-1 bg-fondo" />;
 
   const canSave = name.trim().length > 0;
 
   const save = () => {
     if (!canSave) return;
-    updateHabit(habit.id, {
+    const fields = {
       name: name.trim(),
       icon,
       frequency: frecuencia,
       days: frecuencia === 'dias' ? selectedDays : [],
       moment: momento ?? undefined,
       reminder,
+      timerLabel,
       scheduleLabel: buildScheduleLabel(frecuencia, selectedDays, momento),
-    });
+    };
+    if (isNew) {
+      addHabit({ id: `habito-${Date.now()}`, isPriority: false, ...fields });
+    } else {
+      updateHabit(id, fields);
+    }
     router.back();
   };
 
   const remove = () => {
-    removeHabit(habit.id);
+    removeHabit(id);
     router.back();
   };
 
@@ -192,19 +228,21 @@ export function EditarHabitoScreen() {
               <Text className="text-[16px] font-bold text-white">Guardar cambios</Text>
             </LinearGradient>
           </Pressable>
-          <Pressable
-            onPress={() => setConfirmDelete(true)}
-            accessibilityRole="button"
-            className="mt-3.5 items-center py-2"
-          >
-            <Text className="text-sm font-bold text-morado">Eliminar hábito</Text>
-          </Pressable>
+          {isNew ? null : (
+            <Pressable
+              onPress={() => setConfirmDelete(true)}
+              accessibilityRole="button"
+              className="mt-3.5 items-center py-2"
+            >
+              <Text className="text-sm font-bold text-morado">Eliminar hábito</Text>
+            </Pressable>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
       {showIASheet ? (
         <IconIASheet
-          habitName={name.trim() || habit.name}
+          habitName={name.trim() || source.name}
           onPick={(picked) => {
             setIcon(picked);
             setShowIASheet(false);
@@ -214,7 +252,7 @@ export function EditarHabitoScreen() {
       ) : null}
 
       {confirmDelete ? (
-        <ConfirmDeleteHabit habitName={habit.name} onConfirm={remove} onCancel={() => setConfirmDelete(false)} />
+        <ConfirmDeleteHabit habitName={source.name} onConfirm={remove} onCancel={() => setConfirmDelete(false)} />
       ) : null}
     </View>
   );

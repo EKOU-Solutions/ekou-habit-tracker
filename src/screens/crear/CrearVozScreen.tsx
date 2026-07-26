@@ -12,6 +12,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -20,6 +21,8 @@ import { PopIn } from '@/components/PopIn';
 import { useVoiceCapture } from '@/hooks/useVoiceCapture';
 import { FRECUENCIA_LABELS, MOMENTOS } from '@/lib/habitSchedule';
 import { interpretSpokenHabit, type VoiceHabit } from '@/lib/voice';
+import { IconIASheet } from '@/screens/crear/IconIASheet';
+import { useHabitDraftStore } from '@/store/useHabitDraftStore';
 import { useHabitStore } from '@/store/useHabitStore';
 import { gradientIA, gradientPrincipal, palette, withAlpha } from '@/theme/palette';
 import { resultCardShadow, softBadgeShadow, voiceButtonShadow } from '@/theme/shadows';
@@ -35,9 +38,10 @@ export function CrearVozScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const addHabit = useHabitStore((s) => s.addHabit);
-  const { transcript, state, error, start, stop } = useVoiceCapture();
+  const { transcript, state, error, volume, start, stop } = useVoiceCapture();
   const [fase, setFase] = useState<Fase>('escucho');
   const [result, setResult] = useState<VoiceHabit | null>(null);
+  const [showIASheet, setShowIASheet] = useState(false);
   const transcriptRef = useRef('');
   transcriptRef.current = transcript;
 
@@ -80,6 +84,14 @@ export function CrearVozScreen() {
       timerLabel: result.timerLabel,
     });
     router.back();
+  };
+
+  // "Editar" abre la pantalla de edición precargada con lo dictado, sin crear el hábito todavía.
+  // El borrador viaja por un store en memoria (no por la URL: en web la query con emoji rompía la navegación).
+  const handleEdit = () => {
+    if (!result) return;
+    useHabitDraftStore.getState().setDraft(result);
+    router.replace('/editar/nuevo');
   };
 
   const quoteText =
@@ -125,7 +137,7 @@ export function CrearVozScreen() {
           </Text>
 
           <View className="mt-3.5 h-[76px] items-center justify-center">
-            {fase === 'escucho' ? <WaveForm /> : null}
+            {fase === 'escucho' ? <WaveForm volume={volume} /> : null}
             {fase === 'creando' ? <BreathingOrb /> : null}
           </View>
 
@@ -133,7 +145,12 @@ export function CrearVozScreen() {
 
           {fase === 'creando' ? <CreandoSteps /> : null}
           {fase === 'resultado' && result ? (
-            <ResultadoCard habit={result} onCreate={handleCreate} onEdit={() => router.replace('/crear/texto')} />
+            <ResultadoCard
+              habit={result}
+              onCreate={handleCreate}
+              onEdit={handleEdit}
+              onIconPress={() => setShowIASheet(true)}
+            />
           ) : null}
         </View>
 
@@ -144,7 +161,7 @@ export function CrearVozScreen() {
           <View className="h-[84px] items-center justify-center">
             {fase === 'escucho' ? (
               <Pressable onPress={handleFinish} accessibilityRole="button" accessibilityLabel="Terminar dictado">
-                <PulsingMic />
+                <PulsingMic recording={state === 'listening'} />
               </Pressable>
             ) : null}
             {fase === 'creando' ? (
@@ -174,6 +191,17 @@ export function CrearVozScreen() {
           </Pressable>
         </View>
       </View>
+
+      {showIASheet && result ? (
+        <IconIASheet
+          habitName={result.name}
+          onPick={(picked) => {
+            setResult({ ...result, icon: picked });
+            setShowIASheet(false);
+          }}
+          onClose={() => setShowIASheet(false)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -203,27 +231,46 @@ function Quote({ text, dimmed }: { text: string; dimmed: boolean }) {
   );
 }
 
-function WaveForm() {
+// Factor por barra: las del centro reaccionan más fuerte a la voz que las de los bordes.
+const WAVE_FACTORS = [0.5, 0.7, 0.9, 1, 1, 0.85, 0.75, 0.55, 0.65];
+
+function WaveForm({ volume }: { volume: SharedValue<number> }) {
   return (
     <View className="flex-row items-center gap-1">
       {WAVE_HEIGHTS.map((height, i) => (
-        <WaveBar key={i} height={height} delayMs={i * 80} />
+        <WaveBar key={i} height={height} delayMs={i * 80} factor={WAVE_FACTORS[i]} volume={volume} />
       ))}
     </View>
   );
 }
 
-function WaveBar({ height, delayMs }: { height: number; delayMs: number }) {
-  const scaleY = useSharedValue(0.25);
+/**
+ * Barra de la onda: una respiración base sutil (para que no se vea muerta en silencio)
+ * amplificada por el volumen real del micrófono, así la onda reacciona a lo que dice el usuario.
+ */
+function WaveBar({
+  height,
+  delayMs,
+  factor,
+  volume,
+}: {
+  height: number;
+  delayMs: number;
+  factor: number;
+  volume: SharedValue<number>;
+}) {
+  const idle = useSharedValue(0.35);
 
   useEffect(() => {
-    scaleY.value = withDelay(
+    idle.value = withDelay(
       delayMs,
-      withRepeat(withTiming(1, { duration: 550, easing: Easing.inOut(Easing.ease) }), -1, true),
+      withRepeat(withTiming(0.6, { duration: 620, easing: Easing.inOut(Easing.ease) }), -1, true),
     );
-  }, [delayMs, scaleY]);
+  }, [delayMs, idle]);
 
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scaleY: scaleY.value }] }));
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: Math.min(1, idle.value * 0.5 + volume.value * factor) }],
+  }));
 
   return (
     <Animated.View style={animatedStyle}>
@@ -339,10 +386,12 @@ function ResultadoCard({
   habit,
   onCreate,
   onEdit,
+  onIconPress,
 }: {
   habit: VoiceHabit;
   onCreate: () => void;
   onEdit: () => void;
+  onIconPress: () => void;
 }) {
   const momento = habit.moment ? MOMENTOS.find((m) => m.id === habit.moment) : null;
   const frecuenciaLabel =
@@ -354,7 +403,12 @@ function ResultadoCard({
       <PopIn>
         <View className="mt-4 rounded-[24px] bg-white p-[18px]" style={resultCardShadow}>
           <View className="flex-row items-center gap-[13px]">
-            <View className="relative h-[50px] w-[50px] items-center justify-center rounded-2xl bg-gris-100">
+            <Pressable
+              onPress={onIconPress}
+              accessibilityRole="button"
+              accessibilityLabel="Cambiar el ícono"
+              className="relative h-[50px] w-[50px] items-center justify-center rounded-2xl bg-gris-100"
+            >
               <Text className="text-[25px]">{habit.icon}</Text>
               <LinearGradient
                 colors={gradientIA}
@@ -364,7 +418,7 @@ function ResultadoCard({
               >
                 <Text className="text-[10px]">✨</Text>
               </LinearGradient>
-            </View>
+            </Pressable>
             <View className="flex-1">
               <Text className="text-[17px] font-bold text-tinta">{habit.name}</Text>
               <View className="mt-1.5 flex-row flex-wrap gap-1.5">
@@ -388,6 +442,7 @@ function ResultadoCard({
             <Pressable
               onPress={onEdit}
               accessibilityRole="button"
+              accessibilityLabel="Editar antes de crear"
               className="h-[46px] flex-1 items-center justify-center rounded-full bg-gris-100"
             >
               <Text className="text-[15px] font-semibold text-tinta">Editar</Text>
@@ -412,7 +467,8 @@ function ResultadoCard({
   );
 }
 
-function PulsingMic() {
+/** Botón de dictado: mic mientras arranca, y un cuadro "stop" pulsante mientras graba. */
+function PulsingMic({ recording }: { recording: boolean }) {
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -441,7 +497,11 @@ function PulsingMic() {
         className="h-[84px] w-[84px] items-center justify-center rounded-full"
         style={voiceButtonShadow}
       >
-        <MicIcon color={palette.blanco} size={32} />
+        {recording ? (
+          <View className="h-[26px] w-[26px] rounded-lg bg-white" />
+        ) : (
+          <MicIcon color={palette.blanco} size={32} />
+        )}
       </LinearGradient>
     </Animated.View>
   );
