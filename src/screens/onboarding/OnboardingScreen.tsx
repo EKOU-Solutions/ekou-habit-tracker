@@ -2,7 +2,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientText } from '@/components/GradientText';
@@ -35,17 +44,20 @@ export function OnboardingScreen() {
         end={{ x: 0.63, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {/* ScrollView para que el CTA sea alcanzable con el teclado abierto (ajusta el inset)
-          y para que tocar fuera del campo cierre el teclado (keyboardShouldPersistTaps). */}
-      <ScrollView
+      {/* El contenido va en un ScrollView (tocar fuera / arrastrar cierra el teclado) y el CTA
+          queda fijo abajo dentro del KeyboardAvoidingView, así sube y queda visible sobre el teclado. */}
+      <KeyboardAvoidingView
         className="flex-1"
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30, paddingTop: insets.top + 60 }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <EchoOrb />
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30, paddingTop: insets.top + 60 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          <EchoOrb />
 
           <Text className="mt-[18px] text-[34px] font-extrabold tracking-[-0.5px] text-white">
             Hola, soy EKOU.
@@ -76,33 +88,30 @@ export function OnboardingScreen() {
               Vale un apodo o un alias: HOLDER302, Oli…
             </Text>
           </View>
+        </ScrollView>
 
-          <View className="flex-1" />
-
-          <View
-            className="items-center gap-y-3.5"
-            style={{ paddingBottom: Math.max(insets.bottom, 24) + 32 }}
+        <View
+          className="items-center gap-y-3.5 px-[30px] pt-2"
+          style={{ paddingBottom: Math.max(insets.bottom, 24) + 20 }}
+        >
+          <Pressable
+            onPress={handleStart}
+            disabled={!canStart}
+            accessibilityRole="button"
+            accessibilityLabel="Empezar mi racha"
+            className="h-[58px] w-full flex-row items-center justify-center gap-x-2 rounded-full bg-white active:opacity-90"
+            style={[styles.ctaShadow, !canStart && styles.ctaDisabled]}
           >
-            <Pressable
-              onPress={handleStart}
-              disabled={!canStart}
-              accessibilityRole="button"
-              accessibilityLabel="Empezar mi racha"
-              className="h-[58px] w-full flex-row items-center justify-center gap-x-2 rounded-full bg-white active:opacity-90"
-              style={[styles.ctaShadow, !canStart && styles.ctaDisabled]}
-            >
-              <GradientText className="text-[17px] font-extrabold">
-                Empezar mi racha
-              </GradientText>
-              <Text className="text-base" style={{ color: palette.morado }}>
-                →
-              </Text>
-            </Pressable>
-            <Text className="text-xs text-white/[0.55]">
-              Sin cuentas ni correos. Todo vive en tu iPhone.
+            <GradientText className="text-[17px] font-extrabold">Empezar mi racha</GradientText>
+            <Text className="text-base" style={{ color: palette.morado }}>
+              →
             </Text>
-          </View>
-      </ScrollView>
+          </Pressable>
+          <Text className="text-xs text-white/[0.55]">
+            Sin cuentas ni correos. Todo vive en tu iPhone.
+          </Text>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
