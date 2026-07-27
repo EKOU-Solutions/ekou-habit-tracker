@@ -2,19 +2,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientText } from '@/components/GradientText';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { EchoOrb } from '@/screens/onboarding/EchoOrb';
 import { useUserStore } from '@/store/useUserStore';
 import { gradientInmersivo, palette, withAlpha } from '@/theme/palette';
@@ -23,6 +15,7 @@ import { gradientInmersivo, palette, withAlpha } from '@/theme/palette';
 export function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const keyboardHeight = useKeyboardHeight();
   const completeOnboarding = useUserStore((s) => s.completeOnboarding);
   const [nickname, setNickname] = useState('');
 
@@ -44,12 +37,9 @@ export function OnboardingScreen() {
         end={{ x: 0.63, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {/* El contenido va en un ScrollView (tocar fuera / arrastrar cierra el teclado) y el CTA
-          queda fijo abajo dentro del KeyboardAvoidingView, así sube y queda visible sobre el teclado. */}
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      {/* La altura del teclado empuja el contenedor hacia arriba, así el CTA queda pegado
+          justo encima del teclado (sin hueco); tocar fuera / arrastrar lo cierra. */}
+      <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
         <ScrollView
           className="flex-1"
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30, paddingTop: insets.top + 60 }}
@@ -92,7 +82,7 @@ export function OnboardingScreen() {
 
         <View
           className="items-center gap-y-3.5 px-[30px] pt-2"
-          style={{ paddingBottom: Math.max(insets.bottom, 24) + 20 }}
+          style={{ paddingBottom: keyboardHeight > 0 ? 14 : Math.max(insets.bottom, 24) + 20 }}
         >
           <Pressable
             onPress={handleStart}
@@ -107,11 +97,14 @@ export function OnboardingScreen() {
               →
             </Text>
           </Pressable>
-          <Text className="text-xs text-white/[0.55]">
-            Sin cuentas ni correos. Todo vive en tu iPhone.
-          </Text>
+          {/* La promesa de privacidad solo con el teclado cerrado; al escribir estorbaba bajo el CTA. */}
+          {keyboardHeight === 0 ? (
+            <Text className="text-xs text-white/[0.55]">
+              Sin cuentas ni correos. Todo vive en tu iPhone.
+            </Text>
+          ) : null}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
