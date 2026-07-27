@@ -2,15 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientText } from '@/components/GradientText';
@@ -43,15 +35,17 @@ export function OnboardingScreen() {
         end={{ x: 0.63, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      {/* ScrollView para que el CTA sea alcanzable con el teclado abierto (ajusta el inset)
+          y para que tocar fuera del campo cierre el teclado (keyboardShouldPersistTaps). */}
+      <ScrollView
         className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30, paddingTop: insets.top + 60 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}
       >
-        <View
-          className="flex-1 px-[30px]"
-          style={{ paddingTop: insets.top + 60 }}
-        >
-          <EchoOrb />
+        <EchoOrb />
 
           <Text className="mt-[18px] text-[34px] font-extrabold tracking-[-0.5px] text-white">
             Hola, soy EKOU.
@@ -108,8 +102,7 @@ export function OnboardingScreen() {
               Sin cuentas ni correos. Todo vive en tu iPhone.
             </Text>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </View>
   );
 }
