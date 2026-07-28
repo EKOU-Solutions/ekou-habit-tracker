@@ -92,6 +92,14 @@ export function TemporizadorScreen() {
     setRunning(true);
   };
 
+  /** Salida rápida: da el hábito por hecho sin esperar al cronómetro. */
+  const skip = () => {
+    endsAtRef.current = null;
+    setRunning(false);
+    finish();
+    router.back();
+  };
+
   if (!habit || totalSeconds === 0) return <View className="flex-1 bg-fondo" />;
 
   const isDone = remaining <= 0;
@@ -178,17 +186,28 @@ export function TemporizadorScreen() {
           </View>
         </View>
 
-        <View
-          className="flex-row items-center gap-3"
-          style={{ paddingBottom: Math.max(insets.bottom, 24) + 20 }}
-        >
-          <SecondaryButton label="Reiniciar" onPress={restart} />
-          {isDone ? (
-            <PrimaryButton label="Listo" onPress={() => router.back()} />
-          ) : running ? (
-            <PrimaryButton label="Pausar" onPress={pause} />
-          ) : (
-            <PrimaryButton label="Reanudar" onPress={resume} />
+        <View className="gap-4" style={{ paddingBottom: Math.max(insets.bottom, 24) + 20 }}>
+          <View className="flex-row items-center gap-3">
+            <SecondaryButton label="Reiniciar" onPress={restart} />
+            {isDone ? (
+              <PrimaryButton label="Listo" onPress={() => router.back()} />
+            ) : running ? (
+              <PrimaryButton label="Pausar" onPress={pause} />
+            ) : (
+              <PrimaryButton label="Reanudar" onPress={resume} />
+            )}
+          </View>
+          {isDone ? null : (
+            <Pressable
+              onPress={skip}
+              accessibilityRole="button"
+              accessibilityLabel="Saltar y marcar como hecho"
+              className="items-center py-1"
+            >
+              <Text className="text-[13.5px] font-semibold text-white/[0.6]">
+                Saltar · marcarlo como hecho ✓
+              </Text>
+            </Pressable>
           )}
         </View>
       </View>
