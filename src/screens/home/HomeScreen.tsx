@@ -130,6 +130,7 @@ export function HomeScreen() {
                   habit={habit}
                   isLast={index === restHabits.length - 1}
                   onPress={() => handleToggle(habit)}
+                  onTimerPress={() => router.push(`/temporizador/${habit.id}`)}
                   onEdit={() => router.push(`/editar/${habit.id}`)}
                   onDelete={() => setDeleteId(habit.id)}
                 />
@@ -163,12 +164,14 @@ function SwipeableHabitRow({
   habit,
   isLast,
   onPress,
+  onTimerPress,
   onEdit,
   onDelete,
 }: {
   habit: HabitStatus;
   isLast: boolean;
   onPress: () => void;
+  onTimerPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -215,7 +218,7 @@ function SwipeableHabitRow({
       rightThreshold={40}
       childrenContainerStyle={{ backgroundColor: palette.blanco }}
     >
-      <HabitRow habit={habit} isLast={isLast} onPress={onPress} />
+      <HabitRow habit={habit} isLast={isLast} onPress={onPress} onTimerPress={onTimerPress} />
     </ReanimatedSwipeable>
   );
 }

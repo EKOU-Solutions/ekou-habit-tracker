@@ -168,10 +168,12 @@ function PriorityCheck({ pulse, done }: { pulse: boolean; done: boolean }) {
 export function HabitRow({
   habit,
   onPress,
+  onTimerPress,
   isLast,
 }: {
   habit: HabitStatus;
   onPress: () => void;
+  onTimerPress: () => void;
   isLast: boolean;
 }) {
   return (
@@ -198,10 +200,21 @@ export function HabitRow({
         </Text>
       </View>
       {habit.timerLabel ? (
-        <View className="flex-row items-center gap-[5px] rounded-full bg-aguamarina/[0.16] px-[11px] py-1.5">
+        // Pressable anidado: en nativo el responder system da el toque al interno; en web el
+        // click burbujea, así que se corta para que el chip no marque además el hábito.
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation?.();
+            onTimerPress();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Iniciar temporizador de ${habit.name}`}
+          hitSlop={6}
+          className="flex-row items-center gap-[5px] rounded-full bg-aguamarina/[0.16] px-[11px] py-1.5"
+        >
           <Text className="text-[9px] text-teal-profundo">▶</Text>
           <Text className="text-[12.5px] font-bold text-teal-profundo">{habit.timerLabel}</Text>
-        </View>
+        </Pressable>
       ) : null}
       {habit.doneToday ? (
         <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-aguamarina">
